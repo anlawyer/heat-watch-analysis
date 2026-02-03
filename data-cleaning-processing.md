@@ -193,13 +193,52 @@
 
 7. Normalize file format: **traverses**
 
+- Most common traverse folder name format: `traverses_chw_{city_name}_{ID}`
+    - Manually added underscores where missing from file names
+- Most common raster file name format:
+    - `{time}_trav.shp` (and other shapefile-related extensions: `.dbf`, `.prj`, `.shx`, `.cpg`, `.sbn`, `.sbx`, `.shp.xml`)
+        - `time`: am, af, pm (`am` == morning, `af` == afternoon, `pm` == evening)
+
+- Some cities' folders or file format are slightly different
+    - Austin
+        - `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
+    - Baltimore, MD
+        - `trav_{time}` files. Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
+    - Boise, ID
+        - `{time}_TraversePoints_Boise` (where `time` is `AM`, `Eve`, `PM`). Oddly named/nested folders, moved to main `rasters` and `traverses` folders, separated for Boise and Nampa.
+    - Boston, MA
+        - `Boston_{time}` (where `time` is `am`, `ev`, `pm_revised`). Oddly named/nested folders, moved to main `rasters` and `traverses` folders
+    - Bronx and Manhattan (2021)
+        - `am` and `pm` trav files have additional timestamp text in filename (`af` files don't have this)
+    - Burlington
+        - `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
+        - Also has `bicycle_traverses` folder, files have `{name}_norm` convention, possibly normalized data.
+    - Charlotte NC
+        - All files have `charlotte-north-carolina_{time}_trav` filename format.
+    - Cincinnati
+        - `{time}_trav_rh` and `{time}_trav_temp` folders for each time period. Moved all `temp` files into main `traverses` folder, left `rh` files nested.
+    - Detroit 
+        - `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
+        - Also has `bicycle_traverses` folder, files have `{name}_norm` convention, possibly normalized data.
+
 8. Document cities with any issues
+
+<details>
+<summary>Cities with other traverse file issues</summary>
+
+- Missing files
+    - Albuquerque (2021)
+        - Only `am` and `af` files, no `pm`
+
+</details>
 
 <details>
 <summary>Cities with other raster file issues</summary>
 
 - Missing files
     - Brooklyn
+        - Only `am` and `af` files, no `pm`
+    - Albuquerque (2021)
         - Only `am` and `af` files, no `pm`
 - Other
     - Seattle and King County
