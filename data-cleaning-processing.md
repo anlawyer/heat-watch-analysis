@@ -55,6 +55,10 @@
 - Vancouver
 
 4. Rename city folders with &amp; or other characters besides spaces, hyphens, commas, and parens
+
+<details>
+<summary>Renamed cities</summary>
+    
 - Heat Watch Bronx &amp; Manhattan (2021) 
     - Heat Watch Bronx and Manhattan (2021)
 - Heat Watch Houston &amp; Harris County 
@@ -67,6 +71,8 @@
     - Heat Watch Scranton and Wilkes Barre
 - Heat Watch Seattle &amp; King County
     - Heat Watch Seattle and King County
+
+</details>
 
 5. Unzip all files
 - Most cities' files were unzipped programmatically 
