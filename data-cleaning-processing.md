@@ -93,19 +93,19 @@
 <details>
 <summary>Cities with "mean" files</summary>
     
-    - Asheville
-    - Brockton
-    - Chicago
-    - Iowa City and Cedar Rapids
-    - Johnson County and Wyandotte County
-    - Little Rock
-    - Longmont
-    - MetroWest (Framingham MA)
-    - Oklahoma City
-    - Salt Lake City
-    - Scranton and Wilkes Barre
-    - Sedona
-    - Toledo
+- Asheville
+- Brockton
+- Chicago
+- Iowa City and Cedar Rapids
+- Johnson County and Wyandotte County
+- Little Rock
+- Longmont
+- MetroWest (Framingham MA)
+- Oklahoma City
+- Salt Lake City
+- Scranton and Wilkes Barre
+- Sedona
+- Toledo
 
 </details>
 
