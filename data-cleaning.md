@@ -98,6 +98,7 @@
 - Some cities include "mean" files as well: `mean_hi.tif`, `mean_temp.tif`
     - Asheville
     - Brockton
+    - Chicago 
 - Some cities' file format are slightly different
     - `{time}_heat_index_{scale}.tif`
         - Albuquerque
@@ -107,6 +108,7 @@
         - Austin
         - San Jose and Santa Clara
         - Burlington
+        - Cincinnati
     - `{city}-{time}_temp_{scale}.tif`
         - Charlotte NC 
 - Other misc files formats 
