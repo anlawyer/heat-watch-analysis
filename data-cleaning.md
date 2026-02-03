@@ -8,7 +8,6 @@
     - Parent folder included both "Air Quality Results" and "Heat Results" sub-folders 
 - `Mystic River (2021)`
     - Parent folder included both "Air Quality" and "Heat Watch" sub-folders 
-        - Heat Watch folder includes raster and traverse files for two days of collection
 - `UHI Assessments (2017, 2018)`
     - These cities contained "All Data" zip files
         - Richmond, VA (2017)
@@ -98,43 +97,137 @@
 - Some cities include "mean" files as well: `mean_hi.tif`, `mean_temp.tif`
     - Asheville
     - Brockton
-    - Chicago 
+    - Chicago
+    - Iowa City and Cedar Rapids
+    - Johnson County and Wyandotte County
+    - Little Rock
+    - Longmont
+    - MetroWest (Framingham MA)
+    - Oklahoma City
+    - Salt Lake City
+    - Scranton and Wilkes Barre
+    - Sedona
+    - Toledo
 - Some cities' file format are slightly different
     - `{time}_heat_index_{scale}.tif`
         - Albuquerque
+        - Houston-Harris County
+        - Fort Lauderdale, FL
+            - Unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders, but otherwise file names are consistent with others
+        - Jersey City, Newark, and Elizabeth
+        - Las Cruces
+        - Los Angeles (both north and south files)
+        - Roanoke
+        - Sacramento (CA)
+        - Seattle and King County
+        - Spokane
+        - West Palm Beach, FL
+            - Unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders, but otherwise file names are consistent with others
+        - Worcester, MA
+            - Unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders, but otherwise file names are consistent with others
     - `{time}_htndx_{scale}.tif`
         - Rhode Island
     - `{time}_ht_ndx_{scale}.tif`
         - Austin
-        - San Jose and Santa Clara
         - Burlington
         - Cincinnati
+        - Detroit
+        - El Paso
+        - Jackson
+        - Miami (all days)
+        - New Orleans (all days)
+        - San Jose and Santa Clara
     - `{city}-{time}_temp_{scale}.tif`
-        - Charlotte NC 
+        - Charlotte NC
+        - Laredo TX
+        - Palo Alto CA
+        - Pierce County WA
+        - Santa Fe NM 
 - Other misc files formats 
-    - Baltimore
+    - Baltimore, MD
         - `Heat Watch Baltimore, MD (2018) / All Data_Baltimore / baltimore /`
             - Three `bal_{time}.tif` files
-    - Boise
+    - Boise, ID
         - `Heat Watch Boise, ID / Area-wide_Boise / Area-wide_Boise /`
             - `AM_Area-wide_Boise.tif`, `Eve_Area-wide_Boise.tif`, `PM_Area-wide_Boise.tif` 
             - `AM_Area-wide_Nampa.tif`, `Eve_Area-wide-Nampa.tif`, `PM_Area-wide_Nampa.tif`
-    - Boston
+    - Boston, MA
         - `Heat Watch Boston, MA / All Data_Boston_Heat Watch 2019 / All Data_Boston_Heat Watch 2019 /`
             - `Afternoon_Area-wide_HeatIndex_Boston.tif`, `Evening_Area-wide_HeatIndex_Boston.tif`, `Morning_Area-wide_HeatIndex_Boston.tif`
             - `Afternoon_Area-wide_Temperature_Boston.tif`, `Evening_Area-wide_Temperature_Boston.tif`, `Morning_Area-wide_Temperature_Boston.tif`
+    - Honolulu, HI
+        - `Heat Watch Honolulu, HI / All Data_Honolulu_Heat Watch 2019 / All Data_Honolulu_Heat Watch 2019 /`
+            - `Afternoon_Area-wide_HeatIndex_111719.tiff`, `Evening...`, `Morning...`
+            - `Afternoon_Area-wide_Temperature_1117191.tif`, `Evening...`, `Morning...`
+    - Oakland-Berkeley, CA
+        - `Heat Watch Honolulu, HI / Area-wide_OaklandBerkeley /`
+            - `Afternoon_Area-wide_OaklandBerkeley.tif`, `Evening...`, `Morning...`
+    - Richmond, VA (2017)
+        - Heat Watch Richmond, VA (2017) / All Data_Richmond / rva / temperature surfaces /
+            - `rva_af.tif`, `rva_am.tif`, `rva_pm.tif`
+    - San Bernardino (CA)
+        - Heat Watch San Bernardino (CA) / Area-wide_SanBernardino /
+            - `Afternoon_Area-wide_SanBernardino.tif`, `Evening...`, `Morning...`
+    -  San Juan, PR
+        - Heat Watch San Juan, PR / Area-Wide_San Juan /
+            - `SanJuan_am_HI_F.tif`, `...ev...`, `...pm...`
+            - `SanJuan_am_T_F.tif`, `...ev...`, `...pm...`
+    - Victorville, CA
+        - Heat Watch Victorville, CA / Area-wide_Victorville /
+            - `Afternoon_Area-wide_Victorville.tif`, `Evening...`, `Morning...`
+    - Washington, D.C. (2018)
+        - Heat Watch Washington, D.C. (2018) / All Data_Washington DC / dc / temperature surfaces /
+            - `dc_af.tif`, `dc_am.tif`, `dc_pm.tif`
+    - Yonkers, NY
+        - `Heat Watch Yonkers, NY / All Data_Yonkers_Heat Watch 2019 / All Data_Yonkers_Heat Watch 2019 /`
+            - `ev_hi_ranger.tif`, `am...`, `af...`
+            - `ev_t_f_ranger.tif`, `am...`, `af...`
+            - Also, unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders
 
 7. Document cities with any issues
 - Missing files
     - Brooklyn
         - Only `am` and `af` files, no `pm`
+- Other
     - Seattle and King County
-        - Two sets of raster files: seattle_king_county_120120 and kingcounty_093020
+        - Two sets of raster files: `seattle_king_county_120120` and `kingcounty_093020`
+            - Currently only unzipped / using `seattle_king_county_120120`
     - Rhode Island
         - Also includes `mi` files in addition to `am`, `af`, and `pm`, but ReadMe doesn't say what it is
         - Also has "Appendix Data" zip files, not unzipping those
     - New Orleans
-        - Two days of collection: 08-08 has mornings only, 08-18 has afternoons and evenings
+        - Two days of collection:
+            - 08-08 has `am` only
+            - 08-18 has `af` and `pm`
         - Combined into one rasters folder
+        - Also has `bicycle_traverses` folder: only `af` and `pm`, `norm`
     - Miami
-        - Data collected on several different days, files from different days have same name 
+        - Data collected on several different days, files from different days have same name
+            - 06-27: `am`, `af`, `pm`
+            - 07-05: `am` only
+            - 07-11: `am` only
+            - 07-12: `pm` only
+            - 07-19: `af` and `pm`
+    - El Paso
+        - Has `rasters` folder, `rasters-extended` folder, and `bicycle_rasters` folder
+            - `rasters`: `ht_ndx` `t` 
+            - `rasters-extended`: `hi` `t` `ranger`
+            - `bicycle_rasters`: `hi` `temp` `scaled`
+    - Las Cruces
+        - Has `am`, `af`, `pm`, `bicycle` raster and traverse folders
+            - Combined `am`, `af`, `pm` files into one `rasters` folder, uses `heat_index` `t` format
+                - `bicycle_rasters` not included in main `rasters` folder, uses `hi` `temp` `scaled`
+            - Combined all traverse files into one `traverse` folder
+    - San Francisco
+        - 2 days of traverses, only one day of rasters 
+            - Day 1 has `am`, `af`, and `pm`
+            - Day 2 only has `pm`
+    - Los Angeles
+        - Has north and south folders/files with same file names for both regions 
+        - Traverse files highly nested
+    - Mystic River
+        - Has raster and traverse files for two days of collection
+            - Day 1 has `am`, `af`, and `pm`
+            - Day 2 only has `am`
+    - Portland, OR
+        - Has 3 zip files that the code wasn't able to unzip, each over 1 GB: `825a_2.zip`, `825b_2.zip`, `825c_2.zip`
