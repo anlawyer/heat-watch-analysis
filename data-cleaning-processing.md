@@ -70,21 +70,7 @@
 
 5. Unzip all files
 - Most cities' files were unzipped programmatically 
-- Some cities had nested zip files (i.e. within a `"All Data_Heat Watch {City}"` zip file), so manually unzipped these:
-    - Austin 
-    - Burlington
-    - Cincinnati
-    - Detroit
-    - El Paso
-    - Houston-Harris County 
-    - Jackson 
-    - Las Cruces 
-    - Miami
-    - New Orleans
-    - Rhode Island
-    - Roanoke 
-    - San Jose and Santa Clara
-    - Seattle and King County
+- Some cities had nested zip files (i.e. within a `"All Data_Heat Watch {City}"` zip file), so manually unzipped them
 
 6. Normalize file format
 - Most common raster folder name format: `rasters_chw_{city_name}_{ID}`
