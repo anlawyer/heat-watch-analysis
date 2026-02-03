@@ -5,29 +5,50 @@
 
 2. Download data from cities in nested folders
 - Oklahoma City
-    - Parent folder included both Air Quality Results and Heat Results sub-folders 
+    - Parent folder included both "Air Quality Results" and "Heat Results" sub-folders 
 - Mystic River (2021)
-    - Parent folder included both Air Quality and Heat Watch sub-folders 
+    - Parent folder included both "Air Quality" and "Heat Watch" sub-folders 
+        - Heat Watch folder includes raster and traverse files for two days of collection
 - UHI Assessments (2017, 2018)
-    - Richmond, VA (2017)
-    - Washington, DC (2018)
-    - Baltimore, MD (2018)
-    - Portland, OR (2017)
+    - These cities contained "All Data" zip files
+        - Richmond, VA (2017)
+        - Washington, DC (2018)
+        - Baltimore, MD (2018)
+    - This city contained 3 separate zip files
+    -   Portland, OR (2017)
 - Heat Watch Campaigns (2019)
-    - 
+    - Added "Heat Watch" to folder name for each city
+    - Some cities included an "All Data" folder
+        - Boston, MA
+        - Fort Lauderdale, FL
+        - Honolulu, HI
+        - West Palm Beach, FL
+        - Worcester, MA
+        - Yonkers, NY
+    - Some cities had nested "Traverse Points" and "Surface Models" folders containing "Traverse Points" and "Area-wide" zip files
+        - Los Angeles, CA
+        - Oakland-Berkeley, CA
+        - San Bernadino (CA)
+        - Boise, ID
+        - Sacramento (CA)
+        - Victorville, CA
+        - San Juan, PR (though these zip files were not in nested folders)
 - Heat Watch VFIC (Virginia Foundation for Independent Colleges)
-    - Abingdon
-    - Arlington
-    - Farmville
-    - Harrisonburg
-    - Lynchburg
-    - Petersburg
-    - Richmond
-    - Salem
-    - Virginia Beach
-    - Winchester
+    - Each folder contained two zip files, one for rasters and one for traverses
+    - Added "Heat Watch {city}, VA" to folder name for each city
+        - Abingdon
+        - Arlington
+        - Farmville
+        - Harrisonburg
+        - Lynchburg
+        - Petersburg
+        - Richmond
+            - Also added "(2021)" to this Richmond file as there was an existing "Richmond, VA (2017)" file
+        - Salem
+        - Virginia Beach
+        - Winchester
 
-3. Remove non-US cities and general project folders (5 folders removed)
+3. Remove non-US cities (5 folders removed)
 - Freetown, Sierra Leone
 - Nairobi Kenya 
 - Rio de Janeiro
