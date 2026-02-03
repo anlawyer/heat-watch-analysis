@@ -54,22 +54,22 @@
 - Santiago Chile
 - Vancouver
 
-4. Rename city folders with &amp; or other characters besides spaces, hyphens, commas, and parens
+4. Rename city folders with `&amp;` or other characters besides spaces, hyphens, commas, and parens
 
 <details>
 <summary>Renamed cities</summary>
     
-- Heat Watch Bronx &amp; Manhattan (2021) 
+- Heat Watch Bronx `&amp;` Manhattan (2021) 
     - Heat Watch Bronx and Manhattan (2021)
-- Heat Watch Houston &amp; Harris County 
+- Heat Watch Houston `&amp;` Harris County 
     - Heat Watch Houston-Harris County
-- Heat Watch Johnson County &amp; Wyandotte County 
+- Heat Watch Johnson County `&amp;` Wyandotte County 
     - Heat Watch Johnson County and Wyandotte County
-- Heat Watch San Jose &amp; Santa Clara
+- Heat Watch San Jose `&amp;` Santa Clara
     - Heat Watch San Jose and Santa Clara
-- Heat Watch Scranton &amp; Wilkes Barre
+- Heat Watch Scranton `&amp;` Wilkes Barre
     - Heat Watch Scranton and Wilkes Barre
-- Heat Watch Seattle &amp; King County
+- Heat Watch Seattle `&amp;` King County
     - Heat Watch Seattle and King County
 
 </details>
@@ -78,15 +78,21 @@
 - Most cities' files were unzipped programmatically 
 - Some cities had nested zip files (i.e. within a `"All Data_Heat Watch {City}"` zip file), so manually unzipped them
 
-6. Normalize file format
+6. Normalize file format: **rasters**
 - Most common raster folder name format: `rasters_chw_{city_name}_{ID}`
     - Manually added underscores where missing from file names
 - Most common raster file name format:
-    - `{time}_hi_{scale}.tif` (`hi` == "heat index" data)
-    - `{time}_t_{scale}.tif` (`t` == "temperature" data)
+    - `{time}_hi_{scale}.tif`, `{time}_t_{scale}.tif`
+        - `hi` == "heat index"
+        - `t` == "temperature" 
         - `scale`: f or c (most files use `f`)
         - `time`: am, af, pm (`am` == morning, `af` == afternoon, `pm` == evening)
-- Some cities include "mean" files as well: `mean_hi.tif`, `mean_temp.tif`
+
+- Some cities include "mean" raster files: `mean_hi.tif`, `mean_temp.tif`
+
+<details>
+<summary>Cities with "mean" files</summary>
+    
     - Asheville
     - Brockton
     - Chicago
@@ -100,53 +106,60 @@
     - Scranton and Wilkes Barre
     - Sedona
     - Toledo
+
+</details>
+
 - Some cities' file format are slightly different
-    - `{time}_heat_index_{scale}.tif`
-        - Albuquerque
-        - Houston-Harris County
-        - Fort Lauderdale, FL
-            - Unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders, but otherwise file names are consistent with others
-        - Jersey City, Newark, and Elizabeth
-        - Las Cruces
-        - Los Angeles (both north and south files)
-        - Roanoke
-        - Sacramento (CA)
-        - Seattle and King County
-        - Spokane
-        - West Palm Beach, FL
-            - Unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders, but otherwise file names are consistent with others
-        - Worcester, MA
-            - Unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders, but otherwise file names are consistent with others
-    - `{time}_htndx_{scale}.tif`
-        - Rhode Island
-    - `{time}_ht_ndx_{scale}.tif`
-        - Austin
-        - Burlington
-        - Cincinnati
-        - Detroit
-        - El Paso
-        - Jackson
-        - Miami (all days)
-        - New Orleans (all days)
-        - San Jose and Santa Clara
-    - `{city}-{time}_temp_{scale}.tif`
-        - Charlotte NC
-        - Laredo TX
-        - Palo Alto CA
-        - Pierce County WA
-        - Santa Fe NM 
+
+<details>
+<summary>Cities with different formats</summary>
+
+- `{time}_heat_index_{scale}.tif`
+    - Albuquerque
+    - Houston-Harris County
+    - Fort Lauderdale, FL
+        - Unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders, but otherwise file names are consistent with others
+    - Jersey City, Newark, and Elizabeth
+    - Las Cruces
+    - Los Angeles (both north and south files)
+    - Roanoke
+    - Sacramento (CA)
+    - Seattle and King County
+    - Spokane
+    - West Palm Beach, FL
+        - Unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders, but otherwise file names are consistent with others
+    - Worcester, MA
+        - Unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders, but otherwise file names are consistent with others
+- `{time}_htndx_{scale}.tif`
+    - Rhode Island
+- `{time}_ht_ndx_{scale}.tif`
+    - Austin
+    - Burlington
+    - Cincinnati
+    - Detroit
+    - El Paso
+    - Jackson
+    - Miami (all days)
+    - New Orleans (all days)
+    - San Jose and Santa Clara
+- `{city}-{time}_temp_{scale}.tif`
+    - Charlotte NC
+    - Laredo TX
+    - Palo Alto CA
+    - Pierce County WA
+    - Santa Fe NM 
 - Other misc files formats 
     - Baltimore, MD
         - `Heat Watch Baltimore, MD (2018) / All Data_Baltimore / baltimore /`
             - Three `bal_{time}.tif` files
     - Boise, ID
         - `Heat Watch Boise, ID / Area-wide_Boise / Area-wide_Boise /`
-            - `AM_Area-wide_Boise.tif`, `Eve_Area-wide_Boise.tif`, `PM_Area-wide_Boise.tif` 
-            - `AM_Area-wide_Nampa.tif`, `Eve_Area-wide-Nampa.tif`, `PM_Area-wide_Nampa.tif`
+            - `AM_Area-wide_Boise.tif`, `Eve...`, `PM...` 
+            - `AM_Area-wide_Nampa.tif`, `Eve...`, `PM...`
     - Boston, MA
         - `Heat Watch Boston, MA / All Data_Boston_Heat Watch 2019 / All Data_Boston_Heat Watch 2019 /`
-            - `Afternoon_Area-wide_HeatIndex_Boston.tif`, `Evening_Area-wide_HeatIndex_Boston.tif`, `Morning_Area-wide_HeatIndex_Boston.tif`
-            - `Afternoon_Area-wide_Temperature_Boston.tif`, `Evening_Area-wide_Temperature_Boston.tif`, `Morning_Area-wide_Temperature_Boston.tif`
+            - `Afternoon_Area-wide_HeatIndex_Boston.tif`, `Evening...`, `Morning...`
+            - `Afternoon_Area-wide_Temperature_Boston.tif`, `Evening...`, `Morning...`
     - Honolulu, HI
         - `Heat Watch Honolulu, HI / All Data_Honolulu_Heat Watch 2019 / All Data_Honolulu_Heat Watch 2019 /`
             - `Afternoon_Area-wide_HeatIndex_111719.tiff`, `Evening...`, `Morning...`
@@ -176,7 +189,15 @@
             - `ev_t_f_ranger.tif`, `am...`, `af...`
             - Also, unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders
 
-7. Document cities with any issues
+</details>
+
+7. Normalize file format: **traverses**
+
+8. Document cities with any issues
+
+<details>
+<summary>Cities with other raster file issues</summary>
+
 - Missing files
     - Brooklyn
         - Only `am` and `af` files, no `pm`
@@ -223,3 +244,5 @@
             - Day 2 only has `am`
     - Portland, OR
         - Has 3 zip files that the code wasn't able to unzip, each over 1 GB: `825a_2.zip`, `825b_2.zip`, `825c_2.zip`
+
+</details>
