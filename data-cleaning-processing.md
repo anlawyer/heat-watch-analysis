@@ -226,7 +226,7 @@
 - Some cities' file format are slightly different
 
 <details>
-<summary>Cities with different filename formats</summary>
+<summary>Cities with different raster filename formats</summary>
 
 - `{time}_heat_index_{scale}.tif`
     - Albuquerque
@@ -294,7 +294,7 @@
 8. Document cities with any issues
 
 <details>
-<summary>Cities with other **traverse** file issues</summary>
+<summary>Cities with other traverse file issues</summary>
 
 - Missing files
     - Albuquerque (2021)
@@ -303,7 +303,7 @@
 </details>
 
 <details>
-<summary>Cities with other **raster** file issues</summary>
+<summary>Cities with other raster file issues</summary>
 
 - Missing files
     - Brooklyn
