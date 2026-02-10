@@ -131,6 +131,25 @@
         - Oddly named/nested folders, moved to main `traverses` folders for both `north` and `south` groups.
         - Filenames include `time` as `af`, `am`, and `ev`. 
         - Traverse folders originally said `processed-traverse...` and raster folders originally said `surface models...`.
+    - Mystic River (2021)
+        - Has raster and traverse files for two days of collection: Day 1 has `af`, `am`, and `pm`,  Day 2 only has `am` files.
+        - Renamed to remove `day 1` from folder name to be main folder, left `day 2` folder separate.
+    - New Orleans
+        - Two days of collection: 08-08 has `am` only, and 08-18 has `af` and `pm`.
+            - Combined into main `rasters` and `traverses` folders. 
+        - Also has `bicycle_traverses` folder, files have `{name}_norm` convention, only `af` and `pm` files.
+    - Oakland-Berkeley, CA
+        - Filename format: `{time}_TraversePoints_OaklandBerkeley` (where `time` is `Afternoon`, `Evening`, `Morning`). 
+        - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
+    - Palo Alto CA
+        - All files have `palo-alto-california_{time}_trav` filename format.
+    - Pierce County WA
+        - All files have `pierce-county-washington_{time}_trav` filename format.
+    - Portland, OR (2017)
+        - yikes
+    - Rhode Island
+        - Originally had `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
+        - Also includes `mi` files, and `Appendix Data` folder -- leaving out of main folders. 
 
 7. Normalize file format: **rasters**
 - Most common raster folder name format: `rasters_chw_{city_name}_{ID}`
@@ -172,7 +191,6 @@
     - Albuquerque
     - Houston-Harris County
     - Fort Lauderdale, FL
-        - Unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders, but otherwise file names are consistent with others
     - Jersey City, Newark, and Elizabeth
     - Las Cruces
     - Los Angeles (both north and south files)
@@ -204,23 +222,18 @@
     - Santa Fe NM 
 - Other misc files formats 
     - Baltimore, MD
-        - `Heat Watch Baltimore, MD (2018) / All Data_Baltimore / baltimore /`
-            - Three `bal_{time}.tif` files
+        - Three `bal_{time}.tif` files
     - Boise, ID
-        - `Heat Watch Boise, ID / Area-wide_Boise / Area-wide_Boise /`
-            - `AM_Area-wide_Boise.tif`, `Eve...`, `PM...` 
-            - `AM_Area-wide_Nampa.tif`, `Eve...`, `PM...`
+        - `AM_Area-wide_Boise.tif`, `Eve...`, `PM...` 
+        - `AM_Area-wide_Nampa.tif`, `Eve...`, `PM...`
     - Boston, MA
-        - `Heat Watch Boston, MA / All Data_Boston_Heat Watch 2019 / All Data_Boston_Heat Watch 2019 /`
-            - `Afternoon_Area-wide_HeatIndex_Boston.tif`, `Evening...`, `Morning...`
-            - `Afternoon_Area-wide_Temperature_Boston.tif`, `Evening...`, `Morning...`
+        - `Afternoon_Area-wide_HeatIndex_Boston.tif`, `Evening...`, `Morning...`
+        - `Afternoon_Area-wide_Temperature_Boston.tif`, `Evening...`, `Morning...`
     - Honolulu, HI
-        - `Heat Watch Honolulu, HI / All Data_Honolulu_Heat Watch 2019 / All Data_Honolulu_Heat Watch 2019 /`
-            - `Afternoon_Area-wide_HeatIndex_111719.tiff`, `Evening...`, `Morning...`
-            - `Afternoon_Area-wide_Temperature_1117191.tif`, `Evening...`, `Morning...`
+        - `Afternoon_Area-wide_HeatIndex_111719.tiff`, `Evening...`, `Morning...`
+        - `Afternoon_Area-wide_Temperature_1117191.tif`, `Evening...`, `Morning...`
     - Oakland-Berkeley, CA
-        - `Heat Watch Honolulu, HI / Area-wide_OaklandBerkeley /`
-            - `Afternoon_Area-wide_OaklandBerkeley.tif`, `Evening...`, `Morning...`
+        - `Afternoon_Area-wide_OaklandBerkeley.tif`, `Evening...`, `Morning...`
     - Richmond, VA (2017)
         - Heat Watch Richmond, VA (2017) / All Data_Richmond / rva / temperature surfaces /
             - `rva_af.tif`, `rva_am.tif`, `rva_pm.tif`
@@ -248,7 +261,7 @@
 8. Document cities with any issues
 
 <details>
-<summary>Cities with other traverse file issues</summary>
+<summary>Cities with other raster and traverse file issues</summary>
 
 - Missing files
     - Albuquerque (2021)
