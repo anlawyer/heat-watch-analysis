@@ -54,7 +54,7 @@
 - Santiago Chile
 - Vancouver
 
-4. Rename city folders with `&amp;` or other characters besides spaces, hyphens, commas, and parens
+4. Rename city folders with `&amp;` or other characters besides spaces and commas
 
 <details>
 <summary>Renamed cities</summary>
@@ -62,9 +62,11 @@
 - Heat Watch Bronx `&amp;` Manhattan (2021) 
     - Heat Watch Bronx and Manhattan (2021)
 - Heat Watch Houston `&amp;` Harris County 
-    - Heat Watch Houston-Harris County
+    - Heat Watch Houston and Harris County
 - Heat Watch Johnson County `&amp;` Wyandotte County 
     - Heat Watch Johnson County and Wyandotte County
+- Heat Watch MetroWest (Framingham MA)
+    - Heat Watch MetroWest and Framingham MA
 - Heat Watch San Jose `&amp;` Santa Clara
     - Heat Watch San Jose and Santa Clara
 - Heat Watch Scranton `&amp;` Wilkes Barre
