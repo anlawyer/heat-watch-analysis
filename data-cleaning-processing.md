@@ -110,8 +110,6 @@
     - Los Angeles, CA
         - Filename format: `{time}_trav` (where `time` is `af`, `am`, and `ev`).
         - Oddly named/nested folders, moved to main `traverses` folders for both `north` and `south` groups.
-    - Miami
-        - **Need to combine / reconcile multiple days of files.**
     - Oakland-Berkeley, CA
         - Filename format: `{time}_TraversePoints_OaklandBerkeley` (where `time` is `Afternoon`, `Evening`, `Morning`). 
         - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
@@ -120,7 +118,7 @@
     - Pierce County WA
         - All files have `pierce-county-washington_{time}_trav` filename format.
     - Portland, OR (2017)
-        - **Need to unzip folders to see what is in them.**
+        - Will be omitting Portland from traverse analysis, as the zip files contained no traverse files or data (see below for details).
     - Richmond, VA (2017)
         - Filename format: `all_{time}`. 
         - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
@@ -168,6 +166,8 @@
 - Las Cruces
     - Originally had `{time}_trav_chw_lascruces_{ID}` and `{time}_rasters_chw_lascruces_{ID}` folders for each time period. Moved files to main `rasters` and `traverses` folders.
     - Also has `bicycle_traversepoints` folder, files have `{name}_norm` convention, containing normalized data.
+- Miami
+    - Using only complete day of traverses from 06-27 as data in `traverses` folder. All other days remains in `All Data` zip file. 
 - Mystic River (2021)
     - Has raster and traverse files for two days of collection: Day 1 has `af`, `am`, and `pm`,  Day 2 only has `am` files.
         - Renamed to remove `day 1` from folder name to be main folder, left `day 2` folder separate.
@@ -248,7 +248,7 @@
     - Burlington
     - Cincinnati
     - Detroit
-    - El Paso (rasters)
+    - El Paso
     - Jackson
     - Miami (all days)
     - New Orleans (all days)
@@ -260,7 +260,6 @@
     - Palo Alto CA
     - Pierce County WA
     - Santa Fe NM 
-    - El Paso (bicycle_rasters)
 - Other misc raster filename formats 
     - Baltimore, MD
         - Three `bal_{time}.tif` files
@@ -333,6 +332,7 @@
     - Mystic River
         - Has raster and traverse files for two days of collection: Day 1 has `am`, `af`, and `pm`, Day 2 only has `am`.
     - Portland, OR
-        - Has 3 zip files that the code wasn't able to unzip, each over 1 GB: `825a_2.zip`, `825b_2.zip`, `825c_2.zip`. 
+        - Had 3 zip files over 1 GB each: `825a_2.zip`, `825b_2.zip`, `825c_2.zip`. 
+        - Each contained a `.tif` and `.tfw` file with the same name as the parent zip file. 
 
 </details>
