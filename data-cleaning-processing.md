@@ -78,7 +78,61 @@
 - Most cities' files were unzipped programmatically 
 - Some cities had nested zip files (i.e. within a `"All Data_Heat Watch {City}"` zip file), so manually unzipped them
 
-6. Normalize file format: **rasters**
+6. Normalize file format: **traverses**
+
+- Most common traverse folder name format: `traverses_chw_{city_name}_{ID}`
+    - Manually added underscores where missing from file names
+    - Created `traverses_chw_{city_name}` folders for some cities with different folder formats (see below)
+- Most common raster filename format:
+    - `{time}_trav.shp` (and other shapefile-related extensions: `.dbf`, `.prj`, `.shx`, `.cpg`, `.sbn`, `.sbx`, `.shp.xml`)
+        - `time`: am, af, pm (`am` == morning, `af` == afternoon, `pm` == evening)
+
+- Some cities' folders or file formats are slightly different
+    - Austin
+        - Originally had `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
+    - Baltimore, MD
+        - Filename format: `trav_{time}`.
+        - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
+    - Boise, ID
+        - Filename format: `{time}_TraversePoints_Boise` (where `time` is `AM`, `Eve`, `PM`). 
+        - Oddly named/nested folders, moved to main `rasters` and `traverses` folders, separated for Boise and Nampa.
+    - Boston, MA
+        - Filename format: `Boston_{time}` (where `time` is `am`, `ev`, `pm_revised`). 
+        - Oddly named/nested folders, moved to main `rasters` and `traverses` folders. 
+    - Bronx and Manhattan (2021)
+        - `am` and `pm` trav files have additional timestamp text in filename (`af` files don't have this).
+    - Burlington
+        - Originally had `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
+        - Also has `bicycle_traverses` folder: files have `{name}_norm` convention, containing normalized data.
+    - Charlotte NC
+        - All files have `charlotte-north-carolina_{time}_trav` filename format.
+    - Cincinnati
+        - Originally had `{time}_trav_rh` and `{time}_trav_temp` folders for each time period. Moved all `temp` files into main `traverses` folder, left `rh` files nested.
+    - Detroit 
+        - Originally had `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
+        - Also has `bicycle_traverses` folder, files have `{name}_norm` convention, containing normalized data.
+    - El Paso
+        - Originally had `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
+        - Also has `bicycle_traverses` folder, files have `{name}_norm` convention, containing normalized data.
+    - Fort Lauderdale, FL
+        - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
+    - Honolulu, HI
+        - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
+    - Houston-Harris County
+        - Has `{time}_trav_humidity` and `{time}_trav_temp` files within main `traverses` folder.
+    - Jackson
+        - Originally had `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
+    - Laredo TX
+        - All files have `laredo-texas_{time}_trav` filename format.
+    - Las Cruces
+        - Originally had `{time}_trav_chw_lascruces_{ID}`  and `{time}_rasters_chw_lascruces_{ID}` folders for each time period. Moved files to main `rasters` and `traverses` folders.
+        - Also has `bicycle_traversepoints` folder, files have `{name}_norm` convention, containing normalized data.
+    - Los Angeles, CA
+        - Oddly named/nested folders, moved to main `traverses` folders for both `north` and `south` groups.
+        - Filenames include `time` as `af`, `am`, and `ev`. 
+        - Traverse folders originally said `processed-traverse...` and raster folders originally said `surface models...`.
+
+7. Normalize file format: **rasters**
 - Most common raster folder name format: `rasters_chw_{city_name}_{ID}`
     - Manually added underscores where missing from file names
 - Most common raster file name format:
@@ -191,36 +245,6 @@
 
 </details>
 
-7. Normalize file format: **traverses**
-
-- Most common traverse folder name format: `traverses_chw_{city_name}_{ID}`
-    - Manually added underscores where missing from file names
-- Most common raster file name format:
-    - `{time}_trav.shp` (and other shapefile-related extensions: `.dbf`, `.prj`, `.shx`, `.cpg`, `.sbn`, `.sbx`, `.shp.xml`)
-        - `time`: am, af, pm (`am` == morning, `af` == afternoon, `pm` == evening)
-
-- Some cities' folders or file format are slightly different
-    - Austin
-        - `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
-    - Baltimore, MD
-        - `trav_{time}` files. Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
-    - Boise, ID
-        - `{time}_TraversePoints_Boise` (where `time` is `AM`, `Eve`, `PM`). Oddly named/nested folders, moved to main `rasters` and `traverses` folders, separated for Boise and Nampa.
-    - Boston, MA
-        - `Boston_{time}` (where `time` is `am`, `ev`, `pm_revised`). Oddly named/nested folders, moved to main `rasters` and `traverses` folders
-    - Bronx and Manhattan (2021)
-        - `am` and `pm` trav files have additional timestamp text in filename (`af` files don't have this)
-    - Burlington
-        - `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
-        - Also has `bicycle_traverses` folder, files have `{name}_norm` convention, possibly normalized data.
-    - Charlotte NC
-        - All files have `charlotte-north-carolina_{time}_trav` filename format.
-    - Cincinnati
-        - `{time}_trav_rh` and `{time}_trav_temp` folders for each time period. Moved all `temp` files into main `traverses` folder, left `rh` files nested.
-    - Detroit 
-        - `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
-        - Also has `bicycle_traverses` folder, files have `{name}_norm` convention, possibly normalized data.
-
 8. Document cities with any issues
 
 <details>
@@ -252,7 +276,6 @@
             - 08-08 has `am` only
             - 08-18 has `af` and `pm`
         - Combined into one rasters folder
-        - Also has `bicycle_traverses` folder: only `af` and `pm`, `norm`
     - Miami
         - Data collected on several different days, files from different days have same name
             - 06-27: `am`, `af`, `pm`
@@ -265,18 +288,12 @@
             - `rasters`: `ht_ndx` `t` 
             - `rasters-extended`: `hi` `t` `ranger`
             - `bicycle_rasters`: `hi` `temp` `scaled`
-    - Las Cruces
-        - Has `am`, `af`, `pm`, `bicycle` raster and traverse folders
-            - Combined `am`, `af`, `pm` files into one `rasters` folder, uses `heat_index` `t` format
-                - `bicycle_rasters` not included in main `rasters` folder, uses `hi` `temp` `scaled`
-            - Combined all traverse files into one `traverse` folder
     - San Francisco
         - 2 days of traverses, only one day of rasters 
             - Day 1 has `am`, `af`, and `pm`
             - Day 2 only has `pm`
     - Los Angeles
         - Has north and south folders/files with same file names for both regions 
-        - Traverse files highly nested
     - Mystic River
         - Has raster and traverse files for two days of collection
             - Day 1 has `am`, `af`, and `pm`
