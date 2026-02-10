@@ -78,7 +78,7 @@
 - Most cities' files were unzipped programmatically 
 - Some cities had nested zip files (i.e. within a `"All Data_Heat Watch {City}"` zip file), so manually unzipped them
 
-6. Normalize file format: **traverses**
+6. Normalize **traverses** file format
 
 - Most common traverse folder name format: `traverses_chw_{city_name}_{ID}`
     - Manually added underscores where missing from file names
@@ -130,7 +130,6 @@
     - Los Angeles, CA
         - Oddly named/nested folders, moved to main `traverses` folders for both `north` and `south` groups.
         - Filenames include `time` as `af`, `am`, and `ev`. 
-        - Traverse folders originally said `processed-traverse...` and raster folders originally said `surface models...`.
     - Mystic River (2021)
         - Has raster and traverse files for two days of collection: Day 1 has `af`, `am`, and `pm`,  Day 2 only has `am` files.
         - Renamed to remove `day 1` from folder name to be main folder, left `day 2` folder separate.
@@ -149,9 +148,12 @@
         - yikes
     - Rhode Island
         - Originally had `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
-        - Also includes `mi` files, and `Appendix Data` folder -- leaving out of main folders. 
+        - Also includes `mi` files, and `Appendix Data` folder -- leaving out of main folders.
+    - Richmond, VA (2017)
+        - Filename format: `all_{time}`. 
+        - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
 
-7. Normalize file format: **rasters**
+7. Normalize **raster** file format
 - Most common raster folder name format: `rasters_chw_{city_name}_{ID}`
     - Manually added underscores where missing from file names
 - Most common raster file name format:
@@ -164,7 +166,7 @@
 - Some cities include "mean" raster files: `mean_hi.tif`, `mean_temp.tif`
 
 <details>
-<summary>Cities with "mean" files</summary>
+<summary>Cities with "mean" raster files</summary>
     
 - Asheville
 - Brockton
@@ -185,7 +187,7 @@
 - Some cities' file format are slightly different
 
 <details>
-<summary>Cities with different formats</summary>
+<summary>Cities with different filename formats</summary>
 
 - `{time}_heat_index_{scale}.tif`
     - Albuquerque
@@ -220,7 +222,7 @@
     - Palo Alto CA
     - Pierce County WA
     - Santa Fe NM 
-- Other misc files formats 
+- Other misc raster filename formats 
     - Baltimore, MD
         - Three `bal_{time}.tif` files
     - Boise, ID
@@ -235,8 +237,7 @@
     - Oakland-Berkeley, CA
         - `Afternoon_Area-wide_OaklandBerkeley.tif`, `Evening...`, `Morning...`
     - Richmond, VA (2017)
-        - Heat Watch Richmond, VA (2017) / All Data_Richmond / rva / temperature surfaces /
-            - `rva_af.tif`, `rva_am.tif`, `rva_pm.tif`
+        - `rva_af.tif`, `rva_am.tif`, `rva_pm.tif`
     - San Bernardino (CA)
         - Heat Watch San Bernardino (CA) / Area-wide_SanBernardino /
             - `Afternoon_Area-wide_SanBernardino.tif`, `Evening...`, `Morning...`
@@ -261,7 +262,7 @@
 8. Document cities with any issues
 
 <details>
-<summary>Cities with other raster and traverse file issues</summary>
+<summary>Cities with other **traverse** file issues</summary>
 
 - Missing files
     - Albuquerque (2021)
@@ -270,7 +271,7 @@
 </details>
 
 <details>
-<summary>Cities with other raster file issues</summary>
+<summary>Cities with other **raster** file issues</summary>
 
 - Missing files
     - Brooklyn
@@ -285,10 +286,8 @@
         - Also includes `mi` files in addition to `am`, `af`, and `pm`, but ReadMe doesn't say what it is
         - Also has "Appendix Data" zip files, not unzipping those
     - New Orleans
-        - Two days of collection:
-            - 08-08 has `am` only
-            - 08-18 has `af` and `pm`
-        - Combined into one rasters folder
+        - Two days of collection: 08-08 has `am` only, 08-18 has `af` and `pm`
+            - Combined into one rasters folder
     - Miami
         - Data collected on several different days, files from different days have same name
             - 06-27: `am`, `af`, `pm`
