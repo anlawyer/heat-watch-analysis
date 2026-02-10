@@ -107,7 +107,7 @@
     - Charlotte NC
         - All files have `charlotte-north-carolina_{time}_trav` filename format.
     - Cincinnati
-        - Originally had `{time}_trav_rh` and `{time}_trav_temp` folders for each time period. Moved all `temp` files into main `traverses` folder, left `rh` files nested.
+        - Originally had `{time}_trav_rh` and `{time}_trav_temp` folders for each time period. Moved all `temp` files into main `traverses` folder, left `rh` files in separate folder.
     - Detroit 
         - Originally had `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
         - Also has `bicycle_traverses` folder, files have `{name}_norm` convention, containing normalized data.
@@ -119,7 +119,7 @@
     - Honolulu, HI
         - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
     - Houston-Harris County
-        - Has `{time}_trav_humidity` and `{time}_trav_temp` files within main `traverses` folder.
+        - Originally had `{time}_trav_humidity` and `{time}_trav_temp` files within main `traverses` folder. Kept all `temp` files in main `traverses` folder, moved `humidity` files to separate folder.
     - Jackson
         - Originally had `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
     - Laredo TX
@@ -128,14 +128,16 @@
         - Originally had `{time}_trav_chw_lascruces_{ID}`  and `{time}_rasters_chw_lascruces_{ID}` folders for each time period. Moved files to main `rasters` and `traverses` folders.
         - Also has `bicycle_traversepoints` folder, files have `{name}_norm` convention, containing normalized data.
     - Los Angeles, CA
+        - Filename format: `{time}_trav` (where `time` is `af`, `am`, and `ev`).
         - Oddly named/nested folders, moved to main `traverses` folders for both `north` and `south` groups.
-        - Filenames include `time` as `af`, `am`, and `ev`. 
+    - Miami
+        - **Need to combine / reconcile multiple days of files.**
     - Mystic River (2021)
         - Has raster and traverse files for two days of collection: Day 1 has `af`, `am`, and `pm`,  Day 2 only has `am` files.
-        - Renamed to remove `day 1` from folder name to be main folder, left `day 2` folder separate.
+            - Renamed to remove `day 1` from folder name to be main folder, left `day 2` folder separate.
     - New Orleans
         - Two days of collection: 08-08 has `am` only, and 08-18 has `af` and `pm`.
-            - Combined into main `rasters` and `traverses` folders. 
+            - Combined into main `traverses` folder. 
         - Also has `bicycle_traverses` folder, files have `{name}_norm` convention, only `af` and `pm` files.
     - Oakland-Berkeley, CA
         - Filename format: `{time}_TraversePoints_OaklandBerkeley` (where `time` is `Afternoon`, `Evening`, `Morning`). 
@@ -145,12 +147,41 @@
     - Pierce County WA
         - All files have `pierce-county-washington_{time}_trav` filename format.
     - Portland, OR (2017)
-        - yikes
+        - **Need to unzip folders to see what is in them.**
     - Rhode Island
         - Originally had `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
-        - Also includes `mi` files, and `Appendix Data` folder -- leaving out of main folders.
+        - Also includes `mi` files, and `Appendix Data` folder; keeping separate from main folders.
     - Richmond, VA (2017)
         - Filename format: `all_{time}`. 
+        - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
+    - Roanoke
+        - Also has `bicycle_traverses` folder, files have `{name}_norm` convention, only `af` and `pm` files.
+    - Sacramento (CA)
+        - Filename format: `{time}_TraversePoints_Sacramento` (where `time` is `Afternoon`, `Evening`, `Morning`). 
+    - San Bernadino (CA)
+        - Filename format: `{time}_TraversePoints_SanBernadino` (where `time` is `Afternoon`, `Evening`, `Morning`). 
+    - San Francisco
+        - Has traverse files for two days of collection: Day 1 has `af`, `am`, and `pm`,  Day 2 only has `pm` files.
+            - Renamed to remove `day 1` from folder name to be main folder, left `day 2` folder separate.
+    - San Jose and Santa Clara
+        - Originally had `{time}_trav_humid`/`{time}_trav_humidity` and `{time}_trav_temp` files within main `traverses` folder. Kept all `temp` files in main `traverses` folder, moved `humidity` files to separate folder.
+    - San Juan, PR
+        - Filename format: `{time}_Traverse_Points_San_Juan` (where `time` is `AM`, `Eve`, `PM`).
+    - Santa Fe NM
+        - All files have `santa-fe-new-mexico_{time}_trav` filename format.
+    - Seattle and King County
+        - Originally had `{time}_trav` folders for each time period. Moved all trav files into main `traverses` folder.
+    - Victorville, CA
+        - Filename format: `{time}_TraversePoints_Victorville` (where `time` is `Afternoon`, `Evening`, `Morning`). 
+    - Washington, D.C. (2018)
+        - Filename format: `trav_{time}`.
+        - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
+    - West Palm Beach, FL
+        - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
+    - Worcester, MA
+        - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
+    - Yonkers, NY
+        - Filename format: `{time}_trav` (where `time` is `af`, `am`, `ev`).
         - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
 
 7. Normalize **raster** file format
@@ -201,9 +232,7 @@
     - Seattle and King County
     - Spokane
     - West Palm Beach, FL
-        - Unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders, but otherwise file names are consistent with others
     - Worcester, MA
-        - Unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders, but otherwise file names are consistent with others
 - `{time}_htndx_{scale}.tif`
     - Rhode Island
 - `{time}_ht_ndx_{scale}.tif`
@@ -211,17 +240,19 @@
     - Burlington
     - Cincinnati
     - Detroit
-    - El Paso
+    - El Paso (rasters)
     - Jackson
     - Miami (all days)
     - New Orleans (all days)
     - San Jose and Santa Clara
+    - Seattle and King County
 - `{city}-{time}_temp_{scale}.tif`
     - Charlotte NC
     - Laredo TX
     - Palo Alto CA
     - Pierce County WA
     - Santa Fe NM 
+    - El Paso (bicycle_rasters)
 - Other misc raster filename formats 
     - Baltimore, MD
         - Three `bal_{time}.tif` files
@@ -239,23 +270,17 @@
     - Richmond, VA (2017)
         - `rva_af.tif`, `rva_am.tif`, `rva_pm.tif`
     - San Bernardino (CA)
-        - Heat Watch San Bernardino (CA) / Area-wide_SanBernardino /
-            - `Afternoon_Area-wide_SanBernardino.tif`, `Evening...`, `Morning...`
+        - `Afternoon_Area-wide_SanBernardino.tif`, `Evening...`, `Morning...`
     -  San Juan, PR
-        - Heat Watch San Juan, PR / Area-Wide_San Juan /
-            - `SanJuan_am_HI_F.tif`, `...ev...`, `...pm...`
-            - `SanJuan_am_T_F.tif`, `...ev...`, `...pm...`
+        - `SanJuan_am_HI_F.tif`, `...ev...`, `...pm...`
+        - `SanJuan_am_T_F.tif`, `...ev...`, `...pm...`
     - Victorville, CA
-        - Heat Watch Victorville, CA / Area-wide_Victorville /
-            - `Afternoon_Area-wide_Victorville.tif`, `Evening...`, `Morning...`
+        - `Afternoon_Area-wide_Victorville.tif`, `Evening...`, `Morning...`
     - Washington, D.C. (2018)
-        - Heat Watch Washington, D.C. (2018) / All Data_Washington DC / dc / temperature surfaces /
-            - `dc_af.tif`, `dc_am.tif`, `dc_pm.tif`
+        - `dc_af.tif`, `dc_am.tif`, `dc_pm.tif`
     - Yonkers, NY
-        - `Heat Watch Yonkers, NY / All Data_Yonkers_Heat Watch 2019 / All Data_Yonkers_Heat Watch 2019 /`
-            - `ev_hi_ranger.tif`, `am...`, `af...`
-            - `ev_t_f_ranger.tif`, `am...`, `af...`
-            - Also, unzipped files are nested in "All Data" folder -- need to re-org into `rasters` and `traverses` folders
+        - `ev_hi_ranger.tif`, `am...`, `af...`
+        - `ev_t_f_ranger.tif`, `am...`, `af...`
 
 </details>
 
@@ -280,14 +305,10 @@
         - Only `am` and `af` files, no `pm`
 - Other
     - Seattle and King County
-        - Two sets of raster files: `seattle_king_county_120120` and `kingcounty_093020`
-            - Currently only unzipped / using `seattle_king_county_120120`
-    - Rhode Island
-        - Also includes `mi` files in addition to `am`, `af`, and `pm`, but ReadMe doesn't say what it is
-        - Also has "Appendix Data" zip files, not unzipping those
+        - Additional set of raster files in OSF: `seattle_king_county_120120`. Only `kingcounty_093020` was included in the `All Data` folder, so only using that one for now. 
     - New Orleans
         - Two days of collection: 08-08 has `am` only, 08-18 has `af` and `pm`
-            - Combined into one rasters folder
+            - Combined into main `rasters` folder. 
     - Miami
         - Data collected on several different days, files from different days have same name
             - 06-27: `am`, `af`, `pm`
@@ -296,21 +317,14 @@
             - 07-12: `pm` only
             - 07-19: `af` and `pm`
     - El Paso
-        - Has `rasters` folder, `rasters-extended` folder, and `bicycle_rasters` folder
-            - `rasters`: `ht_ndx` `t` 
-            - `rasters-extended`: `hi` `t` `ranger`
-            - `bicycle_rasters`: `hi` `temp` `scaled`
+        - Has `rasters` and `rasters-extended` folders. 
     - San Francisco
-        - 2 days of traverses, only one day of rasters 
-            - Day 1 has `am`, `af`, and `pm`
-            - Day 2 only has `pm`
+        - 2 days of traverses, only one day of rasters, removed `day 1` text from raster folder name.
     - Los Angeles
-        - Has north and south folders/files with same file names for both regions 
+        - Has north and south folders/files with same file names for both regions.  
     - Mystic River
-        - Has raster and traverse files for two days of collection
-            - Day 1 has `am`, `af`, and `pm`
-            - Day 2 only has `am`
+        - Has raster and traverse files for two days of collection: Day 1 has `am`, `af`, and `pm`, Day 2 only has `am`.
     - Portland, OR
-        - Has 3 zip files that the code wasn't able to unzip, each over 1 GB: `825a_2.zip`, `825b_2.zip`, `825c_2.zip`
+        - Has 3 zip files that the code wasn't able to unzip, each over 1 GB: `825a_2.zip`, `825b_2.zip`, `825c_2.zip`. 
 
 </details>
