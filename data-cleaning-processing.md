@@ -83,7 +83,7 @@
 - Most common traverse folder name format: `traverses_chw_{city_name}_{ID}`
     - Manually added underscores where missing from file names
     - Created `traverses_chw_{city_name}` folders for some cities with different folder formats (see below)
-- Most common raster filename format:
+- Most common traverse filename format:
     - `{time}_trav.shp` (and other shapefile-related extensions: `.dbf`, `.prj`, `.shx`, `.cpg`, `.sbn`, `.sbx`, `.shp.xml`)
         - `time`: am, af, pm (`am` == morning, `af` == afternoon, `pm` == evening)
 
@@ -192,11 +192,10 @@
 
 </details>
 
-
 7. Normalize **raster** file format
 - Most common raster folder name format: `rasters_chw_{city_name}_{ID}`
     - Manually added underscores where missing from file names
-- Most common raster file name format:
+- Most common raster filename format:
     - `{time}_hi_{scale}.tif`, `{time}_t_{scale}.tif`
         - `hi` == "heat index"
         - `t` == "temperature" 
