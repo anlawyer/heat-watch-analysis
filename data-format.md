@@ -7,10 +7,10 @@ Here is the folder and file naming format all the data will follow:
 ```
 /parent-directory/clean/
 └── Heat Watch {City Name}, {state postal code abbreviation}
-    ├── rasters_chw_{state_name}_{ID?}
+    ├── rasters_chw_{city_name}_{ID?}
         └── {time}_hi_f.tif
         └── {time}_t_f.tif
-    └── traverses_chw_{state_name}_{ID?}
+    └── traverses_chw_{city_name}_{ID?}
         └── {time}_trav.shp
 ```
 
