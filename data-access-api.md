@@ -65,7 +65,52 @@ csv_file_path = 'file_links.csv'
 df.to_csv(csv_file_path, index=False)
 ```
 
-Note: I had to manually add the files links to the csv for cities that were nested within sub-project folders (Heat Watch Campaigns (2019), Mystic River (2021), Oklahoma City, Heat Watch VFIC, UHI Assessments (2017, 2018)). 
+Note: I had to manually add the files links to the df/csv for cities that were further nested within sub-project folders: 
+
+- `Oklahoma City`
+    - Parent folder included both "Air Quality Results" and "Heat Results" sub-folders 
+- `Mystic River (2021)`
+    - Parent folder included both "Air Quality" and "Heat Watch" sub-folders 
+- `Bloomington IN`
+    - Parent folder included both "Air Quality Results" and "Heat Results" sub-folders 
+- `UHI Assessments (2017, 2018)`
+    - These cities contained "All Data" zip files
+        - Richmond, VA (2017)
+        - Washington, DC (2018)
+        - Baltimore, MD (2018)
+    - This city contained 3 separate zip files
+        - Portland, OR (2017)
+- `Heat Watch Campaigns (2019)`
+    - Added "Heat Watch" to folder name for each city
+    - Some cities included an "All Data" folder
+        - Boston, MA
+        - Fort Lauderdale, FL
+        - Honolulu, HI
+        - West Palm Beach, FL
+        - Worcester, MA
+        - Yonkers, NY
+    - Some cities had nested "Traverse Points" and "Surface Models" folders containing "Traverse Points" and "Area-wide" zip files
+        - Los Angeles, CA
+        - Oakland-Berkeley, CA
+        - San Bernadino (CA)
+        - Boise, ID
+        - Sacramento (CA)
+        - Victorville, CA
+        - San Juan, PR (though these zip files were not in nested folders)
+- `Heat Watch VFIC` (Virginia Foundation for Independent Colleges)
+    - Each folder contained two zip files, one for rasters and one for traverses
+    - Added "Heat Watch {city}, VA" to folder name for each city
+        - Abingdon
+        - Arlington
+        - Farmville
+        - Harrisonburg
+        - Lynchburg
+        - Petersburg
+        - Richmond
+            - Also added "(2021)" to this Richmond file as there was an existing "Richmond, VA (2017)" file
+        - Salem
+        - Virginia Beach
+        - Winchester
 
 Resulting csv file: 
 
