@@ -1,0 +1,85 @@
+Abingdon, VA
+Albuquerque, NM
+Arlington, VA
+Asheville, NC
+Atlanta, GA
+Austin, TX
+Baltimore, MD
+Boise, ID
+Boston, MA
+Boulder, CO
+Brockton, MA
+Bronx and Manhattan, NY
+Brooklyn, NY
+Burlington, VT
+Charleston, SC
+Charlotte, NC
+Charlottesville, VA
+Chicago, IL
+Cincinnati, OH
+Clark County, NV
+Clarksville, IN
+Columbia, MO
+Columbia, SC
+Columbus, OH
+Detroit, MI
+East Multnomah County, OR
+El Paso, TX
+Farmville, VA
+Fort Lauderdale, FL
+Harrisonburg, VA
+Honolulu, HI
+Houston and Harris County, TX
+Iowa City and Cedar Rapids, IA
+Jackson, MS
+Jacksonville, FL
+Jersey City, Newark, and Elizabeth, NJ
+Johnson County and Wyandotte County, KS
+Kansas City, MO
+Knoxville, TN
+Laredo, TX
+Las Cruces, NM
+Little Rock, AR
+Longmont, CO
+Los Angeles, CA
+Lynchburg, VA
+MetroWest and Framingham, MA
+Miami, FL
+Milwaukee, WI
+Montgomery County, MD
+Mystic River, MA
+Nashville, TN
+New Orleans, LA
+Oakland and Berkeley, CA
+Oklahoma City, OK
+Omaha, NE
+Palo Alto, CA
+Petersburg, VA
+Philadelphia, PA
+Pierce County, WA
+Raleigh and Durham, NC
+Rhode Island
+Richmond, IN
+Richmond, VA
+Roanoke, VA
+Sacramento, CA
+Salem, VA
+Salt Lake City, UT
+San Bernardino, CA
+San Diego, CA
+San Francisco, CA
+San Jose and Santa Clara, CA
+San Juan, PR
+Santa Fe, NM
+Scranton and Wilkes Barre, PA
+Seattle and King County, WA
+Sedona, AZ
+Spokane, WA
+Toledo, OH
+Victorville, CA
+Virginia Beach, VA
+Washington, D.C.
+West Palm Beach, FL
+Winchester, VA
+Worcester, MA
+Yonkers, NY

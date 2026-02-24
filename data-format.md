@@ -22,4 +22,6 @@ Heat Watch Abingdon, VA
     └── af_t_f.tif
 └── traverses_chw_abingdon_110121
     └── af_trav.shp
+    └── am_trav.shp
+    └── pm_trav.shp
 ```

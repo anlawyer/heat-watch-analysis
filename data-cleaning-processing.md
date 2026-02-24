@@ -1,60 +1,15 @@
 ### Data cleaning steps
 
-1. Download data from [OSF API](https://osf.io/user/9neka?tab=2)
-- All campains in CAPA/NIHHIS Heat Watch project: 70 folders downloaded 
+1. Download data from [OSF](https://osf.io/user/9neka?tab=2) via their API, as documented in [this file](./data-access-api.md).
 
-2. Download data from cities in nested folders
-- `Oklahoma City`
-    - Parent folder included both "Air Quality Results" and "Heat Results" sub-folders 
-- `Mystic River (2021)`
-    - Parent folder included both "Air Quality" and "Heat Watch" sub-folders 
-- `UHI Assessments (2017, 2018)`
-    - These cities contained "All Data" zip files
-        - Richmond, VA (2017)
-        - Washington, DC (2018)
-        - Baltimore, MD (2018)
-    - This city contained 3 separate zip files
-        - Portland, OR (2017)
-- `Heat Watch Campaigns (2019)`
-    - Added "Heat Watch" to folder name for each city
-    - Some cities included an "All Data" folder
-        - Boston, MA
-        - Fort Lauderdale, FL
-        - Honolulu, HI
-        - West Palm Beach, FL
-        - Worcester, MA
-        - Yonkers, NY
-    - Some cities had nested "Traverse Points" and "Surface Models" folders containing "Traverse Points" and "Area-wide" zip files
-        - Los Angeles, CA
-        - Oakland-Berkeley, CA
-        - San Bernadino (CA)
-        - Boise, ID
-        - Sacramento (CA)
-        - Victorville, CA
-        - San Juan, PR (though these zip files were not in nested folders)
-- `Heat Watch VFIC` (Virginia Foundation for Independent Colleges)
-    - Each folder contained two zip files, one for rasters and one for traverses
-    - Added "Heat Watch {city}, VA" to folder name for each city
-        - Abingdon
-        - Arlington
-        - Farmville
-        - Harrisonburg
-        - Lynchburg
-        - Petersburg
-        - Richmond
-            - Also added "(2021)" to this Richmond file as there was an existing "Richmond, VA (2017)" file
-        - Salem
-        - Virginia Beach
-        - Winchester
-
-3. Remove non-US cities (5 folders removed)
+2. Remove non-US cities (5 folders removed)
 - Freetown, Sierra Leone
 - Nairobi Kenya 
 - Rio de Janeiro
 - Santiago Chile
 - Vancouver
 
-4. Rename city folders with `&amp;` or other characters besides spaces and commas
+3. Rename city folders with `&amp;` or other characters besides spaces and commas
 
 <details>
 <summary>Renamed cities</summary>
@@ -76,11 +31,7 @@
 
 </details>
 
-5. Unzip all files
-- Most cities' files were unzipped programmatically 
-- Some cities had nested zip files (i.e. within a `"All Data_Heat Watch {City}"` zip file), so manually unzipped them
-
-6. Normalize **traverses** file format
+4. Normalize **traverses** file format
 
 - Most common traverse folder name format: `traverses_chw_{city_name}_{ID}`
     - Manually added underscores where missing from file names
@@ -142,6 +93,8 @@
     - Yonkers, NY
         - Filename format: `{time}_trav` (where `time` is `af`, `am`, `ev`).
         - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
+    - Bloomington IN, Erie County NY, Memphis TN, Moab UT
+        - All filenames follow: `{city}-{state}_{time}_trav`
 
 - Cities with folder updates
 
@@ -191,6 +144,8 @@
     - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
 - Worcester, MA
     - Oddly named/nested folders, moved to main `rasters` and `traverses` folders.
+- Bloomington IN, Erie County NY, Memphis TN, Moab UT
+    - All folders follow: `traverses_chw_{city}_{state}_{ID}`
 
 </details>
 
@@ -262,6 +217,12 @@
     - Palo Alto CA
     - Pierce County WA
     - Santa Fe NM 
+- `{city}-{state}_{time}_temp_{scale}.tif`
+    - Bloomington IN
+    - Erie County NY
+    - Memphis TN
+    - Moab UT
+
 - Other misc raster filename formats 
     - Baltimore, MD
         - Three `bal_{time}.tif` files
