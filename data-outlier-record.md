@@ -299,3 +299,9 @@
         - Each contained a `.tif` and `.tfw` file with the same name as the parent zip file. 
 
 </details>
+
+9. Document data/column formatting updates
+
+- Temperature column modifications
+    - San Juan: renamed `T` column to `T_C`
+    - Baltimore and Washington, DC: added `T_F` column, then renamed `T` column to `T_C`

@@ -333,3 +333,104 @@ class HeatWatchDataValidator:
         pd.DataFrame([summary]).to_csv(output_dir / 'validation_summary.csv', index=False)
         print(f"Summary exported to: {output_dir / 'validation_summary.csv'}")
 ```
+
+Code to validate all temperature column names:
+
+```python
+class TraverseTempColumnAnalyzer:
+    """Analyze traverse point data from Heat Watch campaigns"""
+
+    def extract_city_name(self, city_dir_name):
+        """Clean up city name from directory"""
+        # Remove 'Heat Watch ' prefix if present
+        city_name = city_dir_name.replace('Heat Watch ', '')
+        return city_name
+    
+    def __init__(self, data_root):
+        self.data_root = Path(data_root)
+        self.traverse_data = []
+        self.cities = []
+
+    def print_traversefile_columns(self, shapefile_path, city_name):
+        """Load and extract data from traverse shapefile"""
+        try:
+            gdf = gpd.read_file(shapefile_path)
+            
+            # Look for temperature field - could be named various ways
+            temp_fields = [col for col in gdf.columns if any(
+                temp_indicator in col
+                for temp_indicator in ['temp_f', 'Temprtr', 't_f', 'T_C', 'T_F', 'T', 't_c']
+            )]
+
+            if not temp_fields:
+                print(f"Warning: No temperature field found in {shapefile_path.name} for {city_name}")
+                return None
+            
+            return {
+                'temp_fields': temp_fields,
+            }
+            
+        except Exception as e:
+            print(f"Error loading {shapefile_path}: {e}")
+            return None
+    
+    def load_traverses(self):
+        """Load all traverse files from all cities"""
+        print("Loading traverse data from all cities...")
+        
+        for city_dir in sorted(self.data_root.iterdir()):
+            if not city_dir.is_dir():
+                continue
+            
+            city_name = self.extract_city_name(city_dir.name)
+            
+            # Find traverses folders based on common patterns
+            traverse_folders = list(city_dir.glob('traverses*'))
+
+            # If no specific traverses folder exists, check main directory
+            if not traverse_folders:
+                traverse_folders = [city_dir]
+
+            # Track processed files to avoid duplicates
+            processed_files = set()
+            
+            for traverse_folder in traverse_folders:
+                # Find all shapefiles (non-recursive to avoid duplicates)
+                shapefiles = list(traverse_folder.glob('*trav.shp'))
+                
+                for shp_path in shapefiles:
+                    # Skip if already processed
+                    if str(shp_path) in processed_files:
+                        continue
+                    
+                    processed_files.add(str(shp_path))
+                    
+                    traverse_info = self.print_traversefile_columns(shp_path, city_name)
+                    
+                    count_Temprtr = 0
+                    count_t_f = 0
+                    count_temp_f = 0
+                    count_T = 0
+                    count_T_F = 0
+                    for f in traverse_info['temp_fields']:
+                        if f == 'Temprtr': count_Temprtr += 1
+                        if f == 't_f': count_t_f += 1
+                        if f == 'temp_f': count_temp_f += 1
+                        if f == 'T': count_T += 1
+                        if f == 'T_F': count_T_F += 1
+                    
+                    self.traverse_data.append({
+                        'city': city_name,
+                        'filename': shp_path.name,
+                        'temp_fields': traverse_info['temp_fields'],
+                        'Temprtr count': count_Temprtr,
+                        't_f count': count_t_f,
+                        'temp_f count': count_temp_f,
+                        'T count': count_T,
+                        'T_F count': count_T_F,
+                    })
+
+        self.df = pd.DataFrame(self.traverse_data)
+        print(f"\nLoaded {len(self.df)} traverse files from {self.df['city'].nunique()} cities")
+        return self.df
+```
