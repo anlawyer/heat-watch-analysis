@@ -1,0 +1,193 @@
+
+Loaded 269 traverse files from 89 cities
+
+================================================================================
+TRAVERSE POINT COUNT ANALYSIS
+================================================================================
+
+Overall Statistics:
+  Total traverse files: 269
+  Total cities: 89
+  Mean points per traverse: 22631.4
+  Median points per traverse: 19342.0
+  Range: 2342 to 81298 points
+
+--------------------------------------------------------------------------------
+Points by Time Period:
+             count          mean   median   min    max
+time_period                                           
+af              90  21924.533333  18686.0  2342  75713
+am              90  23666.988889  20293.5  2840  81298
+pm              89  22298.932584  19342.0  5891  76956
+
+--------------------------------------------------------------------------------
+Top 10 Cities by Average Point Count:
+city
+Houston and Harris County, TX              77576.333333
+Oklahoma City, OK                          74617.333333
+Johnson County and Wyandotte County, KS    69966.333333
+Baltimore, MD                              49270.333333
+San Jose and Santa Clara, CA               48851.666667
+Chicago, IL                                46477.666667
+Jacksonville, FL                           45621.000000
+Clark County, NV                           45183.666667
+Detroit, MI                                43808.333333
+Memphis, TN                                43715.333333
+Name: point_count, dtype: float64
+
+Bottom 10 Cities by Average Point Count:
+city
+Brockton, MA       9394.333333
+Bloomington, IN    9307.000000
+Moab, UT           9076.000000
+Palo Alto, CA      9062.000000
+Boulder, CO        9042.333333
+Clarksville, IN    8103.666667
+Salem, VA          7711.666667
+Petersburg, VA     7457.333333
+Sedona, AZ         5829.000000
+Lynchburg, VA      5415.000000
+Name: point_count, dtype: float64
+
+--------------------------------------------------------------------------------
+Time Period Coverage by City:
+
+Cities by number of time periods:
+  2 time period(s): 1 cities
+  3 time period(s): 88 cities
+
+1 cities with incomplete time period coverage:
+  Albuquerque, NM: ['af', 'am']
+
+================================================================================
+TEMPERATURE DISTRIBUTION ANALYSIS
+================================================================================
+
+Overall Statistics:
+  Mean temperature: 81.47°F
+  Median temperature: 81.54°F
+  Std deviation: 1.69°F
+  Temperature range across all data: 41.70°F to 112.28°F
+
+--------------------------------------------------------------------------------
+Temperature Statistics by Time Period:
+            mean_temp       median_temp       std_temp       min_temp        \
+                 mean   std        mean   std     mean   std     mean   std   
+time_period                                                                   
+af              89.45  6.42       89.49  6.41     1.70  0.55    83.90  6.88   
+am              70.36  7.31       70.41  7.36     1.63  0.77    65.47  7.93   
+pm              84.64  7.10       84.77  7.16     1.75  0.60    78.76  6.80   
+
+            max_temp        
+                mean   std  
+time_period                 
+af             95.58  5.93  
+am             75.02  6.86  
+pm             89.76  6.77  
+
+--------------------------------------------------------------------------------
+Top 10 Warmest Cities (average across all time periods):
+  1. El Paso, TX: 96.84°F
+  2. Las Cruces, NM: 93.56°F
+  3. Laredo, TX: 93.34°F
+  4. Omaha, NE: 92.02°F
+  5. Columbia, MO: 90.04°F
+  6. Memphis, TN: 89.71°F
+  7. Jacksonville, FL: 89.61°F
+  8. Austin, TX: 88.38°F
+  9. Charlotte, NC: 88.27°F
+  10. Sacramento, CA: 87.70°F
+
+Top 10 Coolest Cities (average across all time periods):
+  1. Detroit, MI: 74.53°F
+  2. Los Angeles, CA: 74.47°F
+  3. Pierce County, WA: 73.65°F
+  4. Atlanta, GA: 72.95°F
+  5. Columbus, OH: 71.63°F
+  6. San Bernardino, CA: 70.90°F
+  7. San Diego, CA: 69.75°F
+  8. San Jose and Santa Clara, CA: 67.93°F
+  9. Oakland and Berkeley, CA: 63.22°F
+  10. San Francisco, CA: 62.07°F
+
+--------------------------------------------------------------------------------
+Temperature Change Throughout Day (AM to PM):
+
+Cities with Largest Temperature Increase (AM to PM):
+  1. Boise, ID: +32.09°F (AM: 58.0°F → PM: 90.1°F)
+  2. Sedona, AZ: +30.43°F (AM: 53.2°F → PM: 83.6°F)
+  3. Sacramento, CA: +28.28°F (AM: 67.1°F → PM: 95.4°F)
+  4. Longmont, CO: +26.92°F (AM: 57.9°F → PM: 84.8°F)
+  5. Salt Lake City, UT: +25.63°F (AM: 65.7°F → PM: 91.3°F)
+  6. Palo Alto, CA: +24.70°F (AM: 57.3°F → PM: 82.0°F)
+  7. Seattle and King County, WA: +24.67°F (AM: 60.9°F → PM: 85.5°F)
+  8. Moab, UT: +23.16°F (AM: 69.8°F → PM: 93.0°F)
+  9. Santa Fe, NM: +23.07°F (AM: 63.0°F → PM: 86.1°F)
+  10. Nashville, TN: +22.50°F (AM: 65.6°F → PM: 88.1°F)
+
+Cities with Smallest Temperature Increase (AM to PM):
+  1. San Diego, CA: +4.30°F (AM: 64.2°F → PM: 68.5°F)
+  2. San Juan, PR: +4.25°F (AM: 78.5°F → PM: 82.7°F)
+  3. Oakland and Berkeley, CA: +3.97°F (AM: 59.0°F → PM: 62.9°F)
+  4. West Palm Beach, FL: +3.50°F (AM: 81.3°F → PM: 84.8°F)
+  5. Miami, FL: +3.31°F (AM: 82.5°F → PM: 85.8°F)
+  6. San Jose and Santa Clara, CA: +3.29°F (AM: 62.4°F → PM: 65.7°F)
+  7. Honolulu, HI: +3.06°F (AM: 78.5°F → PM: 81.6°F)
+  8. Oklahoma City, OK: +-1.84°F (AM: 85.0°F → PM: 83.1°F)
+  9. Charleston, SC: +-2.23°F (AM: 81.9°F → PM: 79.7°F)
+
+--------------------------------------------------------------------------------
+Cities with Highest Temperature Variation (average std dev):
+  1. Seattle and King County, WA: 2.88°F
+  2. San Bernardino, CA: 2.85°F
+  3. Sacramento, CA: 2.54°F
+  4. Oakland and Berkeley, CA: 2.43°F
+  5. Virginia Beach, VA: 2.34°F
+  6. Boulder, CO: 2.33°F
+  7. Worcester, MA: 2.30°F
+  8. Washington, D.C.: 2.27°F
+  9. Palo Alto, CA: 2.23°F
+  10. Honolulu, HI: 2.21°F
+
+================================================================================
+OUTLIER DETECTION ANALYSIS
+================================================================================
+
+Found outliers in 238 traverse files
+
+--------------------------------------------------------------------------------
+Top 15 Files with Highest Outlier Percentage (IQR method):
+
+City | Time | Points | Outliers | % | Mean Temp | Std | Range
+--------------------------------------------------------------------------------
+San Juan, PR                   | pm   |  19342 |     2709 |  14.0% |   82.7°F |   1.6 | 75.0-86.4°F
+El Paso, TX                    | am   |  25946 |     2945 |  11.4% |   82.8°F |   2.1 | 73.0-88.7°F
+Fort Lauderdale, FL            | pm   |  16116 |     1632 |  10.1% |   83.3°F |   0.9 | 80.4-85.3°F
+Bloomington, IN                | pm   |   9229 |      928 |  10.1% |   86.4°F |   1.9 | 79.0-90.1°F
+Fort Lauderdale, FL            | af   |  17546 |     1687 |   9.6% |   87.5°F |   1.6 | 83.1-94.5°F
+Miami, FL                      | am   |  19257 |     1833 |   9.5% |   82.5°F |   1.7 | 75.2-84.2°F
+Lynchburg, VA                  | am   |   2840 |      239 |   8.4% |   71.0°F |   0.7 | 68.3-72.1°F
+Moab, UT                       | af   |   9119 |      759 |   8.3% |   96.0°F |   1.9 | 90.0-100.7°F
+Columbus, OH                   | pm   |  33170 |     2696 |   8.1% |   76.5°F |   1.9 | 68.1-81.3°F
+San Juan, PR                   | am   |  22571 |     1829 |   8.1% |   78.5°F |   2.4 | 70.5-82.4°F
+Buffalo and Erie County, NY    | am   |  19599 |     1444 |   7.4% |   71.5°F |   2.3 | 60.4-74.8°F
+Las Cruces, NM                 | af   |  12535 |      849 |   6.8% |  104.8°F |   1.6 | 99.5-112.3°F
+Detroit, MI                    | am   |  46178 |     2983 |   6.5% |   61.3°F |   2.1 | 56.7-68.2°F
+Las Cruces, NM                 | pm   |  13878 |      860 |   6.2% |   98.9°F |   2.2 | 89.2-103.3°F
+Honolulu, HI                   | am   |  26258 |     1587 |   6.0% |   78.5°F |   2.4 | 70.2-82.8°F
+
+--------------------------------------------------------------------------------
+Files with Extreme Temperature Readings:
+
+  Large Temperature Range (>30°F in single traverse): 1 files
+    Oakland and Berkeley, CA (af): 33.5°F range (60.1-93.6°F)
+
+Results exported to analysis_results/
+  - city_summary.csv
+  - time_period_summary.csv
+  - traverse_file_details.csv
+  - outlier_analysis.csv
+
+================================================================================
+ANALYSIS COMPLETE
+================================================================================

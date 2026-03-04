@@ -1,0 +1,4 @@
+time_period,point_count_count,point_count_mean,point_count_median,mean_temp_mean,mean_temp_std,std_temp_mean,min_temp_min,max_temp_max
+af,90,21924.53,18686.0,89.45,6.42,1.7,60.08,112.28
+am,90,23666.99,20293.5,70.36,7.31,1.63,41.7,88.7
+pm,89,22298.93,19342.0,84.64,7.1,1.75,57.74,108.68
