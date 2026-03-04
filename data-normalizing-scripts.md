@@ -8,8 +8,7 @@ As described in [this file](./data-cleaning-processing.md), many of the files an
 
 2. In a Jupyter Notebook, I wrote some code (with the help of Claude via Copilot) to ensure all files followed the same format. 
 
-- File names
-    - Note specific handling of outliers like Boise, San Juan, and Boston. 
+- File names update (note specific handling of outliers like Boise, San Juan, and Boston.)
 
 ```python
 # Import libraries for processing data
@@ -269,8 +268,6 @@ class TraverseFilenameNormalizer:
 
     def generate_report(self):
         """Generate a summary report of all changes"""
-        import pandas as pd
-        
         print("\n" + "=" * 70)
         print("PROCESSING COMPLETE")
         print("=" * 70)
@@ -287,12 +284,273 @@ class TraverseFilenameNormalizer:
         else:
             print("\nNo files need renaming!")
             return pd.DataFrame()
+    
+    def export_report(self, output_path):
+        """Export detailed report to CSV"""
+        # Filter out informational log entries
+        actual_changes = [log for log in self.changes_log if 'old_name' in log]
+        
+        if actual_changes:
+            df = pd.DataFrame(actual_changes)
+            df.to_csv(output_path, index=False)
+            print(f"\nDetailed report saved to: {output_path}")
+        
+        if self.errors_log:
+            errors_df = pd.DataFrame(self.errors_log)
+            error_path = Path(output_path).parent / "filename_normalization_errors.csv"
+            errors_df.to_csv(error_path, index=False)
+            print(f"Errors saved to: {error_path}")
+
+# ============================================================================
+# USAGE
+# ============================================================================
+
+# Set your base directory
+BASE_DIR = ""
+
+# Initialize normalizer
+normalizer = TraverseFilenameNormalizer(BASE_DIR)
+
+# Step 1: DRY RUN - See what would change without actually renaming
+print("=" * 70)
+print("STEP 1: DRY RUN - Preview changes")
+print("=" * 70)
+changes_df = normalizer.process_all_cities(dry_run=True)
+
+# Export the preview
+if len(changes_df) > 0:
+    normalizer.export_report("traverse_filename_changes_preview.csv")
+
+# After running dry run, check specific cities:
+if len(changes_df) > 0:
+    special_cities = changes_df[
+        changes_df['city'].str.contains('Boise|San Juan|Boston', case=False, regex=True)
+    ]
+    print("\n\nChanges for cities with special mappings:")
+    print(special_cities[['city', 'old_name', 'new_name']])
+
+# Step 2: Review the changes, then execute for real
+# Uncomment the lines below after reviewing the dry run results
+
+# print("\n" + "=" * 70)
+# print("STEP 2: LIVE RUN - Actually renaming files")
+# print("=" * 70)
+# normalizer_live = TraverseFilenameNormalizer(BASE_DIR)
+# changes_df_live = normalizer_live.process_all_cities(dry_run=False)
+# normalizer_live.export_report("traverse_filename_changes_completed.csv")
 ```
 
+- Temperature columns update (note specific handling of outliers like San Juan, DC, and Baltimore.)
 
 ```python
 """
-Helper functions for temperature column normalization.
+Rename non-standard temperature column names (t_f, T_F) to the
+required standard column name 'temp_f' across all traverse shapefiles.
+
+Follows the same dry_run / changes_log / errors_log pattern as
+TraverseFilenameNormalizer in this file.
+"""
+
+class TempColumnRenamer:
+    """Rename t_f / T_F column to temp_f in all traverse shapefiles."""
+
+    # Columns that must be renamed → target name (per data-format.md)
+    RENAME_MAP = {
+        't_f': 'temp_f',
+        'T_F': 'temp_f',
+    }
+
+    def __init__(self, base_dir):
+        self.base_dir = Path(base_dir)
+        self.changes_log = []
+        self.errors_log = []
+
+    def _extract_city_name(self, city_dir_name: str) -> str:
+        return city_dir_name.replace('Heat Watch ', '')
+
+    def _columns_to_rename(self, columns: list[str]) -> dict[str, str]:
+        """Return {old_name: new_name} for any columns that need renaming."""
+        return {col: self.RENAME_MAP[col] for col in columns if col in self.RENAME_MAP}
+
+    # Per-file processing
+    def rename_columns_in_shapefile(
+        self, shp_path: Path, city_name: str, dry_run: bool = True
+    ) -> dict:
+        """
+        Rename non-standard temp columns in a single shapefile.
+
+        In dry_run mode the file is never written; the record still shows
+        what *would* change so you can audit before committing.
+        """
+        try:
+            gdf = gpd.read_file(shp_path)
+        except Exception as exc:
+            record = {
+                'status': 'error',
+                'city': city_name,
+                'filename': shp_path.name,
+                'path': str(shp_path),
+                'issue': f'Could not open shapefile: {exc}',
+            }
+            self.errors_log.append(record)
+            return record
+
+        renames = self._columns_to_rename(list(gdf.columns))
+
+        if not renames:
+            return {
+                'status': 'skipped',
+                'city': city_name,
+                'filename': shp_path.name,
+                'path': str(shp_path),
+                'renames': {},
+            }
+
+        record = {
+            'status': 'dry_run' if dry_run else 'renamed',
+            'city': city_name,
+            'filename': shp_path.name,
+            'path': str(shp_path),
+            'renames': renames,
+        }
+
+        if not dry_run:
+            try:
+                gdf = gdf.rename(columns=renames)
+                # to_file rewrites .shp/.dbf/.shx/.prj/.cpg atomically
+                gdf.to_file(shp_path, driver='ESRI Shapefile')
+                self.changes_log.append(record)
+            except Exception as exc:
+                record['status'] = 'error'
+                record['issue'] = f'Failed to write shapefile: {exc}'
+                self.errors_log.append(record)
+        else:
+            self.changes_log.append(record)
+
+        return record
+
+    # City / dataset traversal
+    def process_city(self, city_dir: Path, dry_run: bool = True):
+        """Process all traverse shapefiles within a single city folder."""
+        city_name = self._extract_city_name(city_dir.name)
+        traverse_folders = list(city_dir.glob('traverses*')) or [city_dir]
+
+        processed = set()
+        for folder in traverse_folders:
+            for shp_path in sorted(folder.glob('*trav.shp')):
+                if str(shp_path) in processed:
+                    continue
+                processed.add(str(shp_path))
+                self.rename_columns_in_shapefile(shp_path, city_name, dry_run=dry_run)
+
+    def process_all(self, dry_run: bool = True) -> dict | None:
+        """
+        Rename temp columns across every city folder.
+
+        Parameters
+        ----------
+        dry_run : bool
+            If True (default), log what would change without writing any files.
+            Set to False only after reviewing the dry-run report.
+        """
+        if not self.base_dir.exists():
+            print(f'Error: Base directory does not exist: {self.base_dir}')
+            return None
+
+        mode_label = '(DRY RUN — no files will be written)' if dry_run else '(LIVE — files will be overwritten)'
+        print(f'\nProcessing all cities {mode_label}')
+        print('=' * 70)
+
+        city_dirs = sorted([d for d in self.base_dir.iterdir() if d.is_dir()])
+        print(f'Found {len(city_dirs)} city folders')
+
+        for city_dir in city_dirs:
+            self.process_city(city_dir, dry_run=dry_run)
+
+        return self.generate_report(dry_run=dry_run)
+
+    # Reporting
+    def generate_report(self, dry_run: bool = True) -> dict | None:
+        """Print a structured report and return DataFrames."""
+        mode_label = 'DRY RUN' if dry_run else 'COMPLETED'
+
+        print(f'\n{"=" * 70}')
+        print(f'TEMP COLUMN RENAME REPORT — {mode_label}')
+        print('=' * 70)
+
+        renames = [r for r in self.changes_log if r['renames']]
+        skipped = [r for r in self.changes_log if not r['renames']]
+
+        print(f'\nFiles requiring rename : {len(renames)}')
+        print(f'Files already correct  : {len(skipped)}')
+        print(f'Errors                 : {len(self.errors_log)}')
+
+        if renames:
+            print(f'\n{"=" * 70}')
+            action = 'Would rename' if dry_run else 'Renamed'
+            print(f'{action} columns in the following files:')
+            print('=' * 70)
+
+            renames_df = pd.DataFrame(renames)
+
+            # Column-name frequency summary
+            all_old_names = []
+            for r in renames:
+                all_old_names.extend(r['renames'].keys())
+            freq = pd.Series(all_old_names).value_counts()
+            print('\nOld column name frequencies:')
+            for col_name, count in freq.items():
+                print(f"  '{col_name}' → 'temp_f' : {count} file(s)")
+
+            print(f'\nDetailed file list (first 20):')
+            for idx, r in enumerate(renames[:20], 1):
+                print(f"\n{idx}. {r['city']} / {r['filename']}")
+                for old, new in r['renames'].items():
+                    print(f"     '{old}' → '{new}'")
+
+            if len(renames) > 20:
+                print(f'\n... and {len(renames) - 20} more files')
+
+        if self.errors_log:
+            print(f'\n{"=" * 70}')
+            print('ERRORS')
+            print('=' * 70)
+            for err in self.errors_log:
+                print(f"  {err['city']} / {err['filename']}: {err['issue']}")
+
+        return {
+            'renames': pd.DataFrame(renames) if renames else None,
+            'skipped': pd.DataFrame(skipped) if skipped else None,
+            'errors': pd.DataFrame(self.errors_log) if self.errors_log else None,
+        }
+
+    def export_report(self, output_dir: str):
+        """Export rename logs to CSVs."""
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        renames = [r for r in self.changes_log if r['renames']]
+        if renames:
+            path = output_dir / 'temp_column_renames.csv'
+            pd.DataFrame(renames).to_csv(path, index=False)
+            print(f'Renames log exported to: {path}')
+
+        if self.errors_log:
+            path = output_dir / 'temp_column_rename_errors.csv'
+            pd.DataFrame(self.errors_log).to_csv(path, index=False)
+            print(f'Errors exported to: {path}')
+
+        summary = {
+            'files_to_rename': len(renames),
+            'files_skipped': len([r for r in self.changes_log if not r['renames']]),
+            'errors': len(self.errors_log),
+        }
+        path = output_dir / 'temp_column_rename_summary.csv'
+        pd.DataFrame([summary]).to_csv(path, index=False)
+        print(f'Summary exported to: {path}')
+
+"""
+Helper functions for temperature column conversions.
 """
 
 def celsius_to_fahrenheit(celsius):
@@ -466,6 +724,23 @@ def process_cities(data_root, cities_to_process, max_workers=4):
             print(f"[{completed}/{len(tasks)}] {status_symbol} {city_name}/{shapefile_path.name}")
     
     return results
-```
 
-- TODO: Update all temperature column names to `temp_f`
+# ============================================================================
+# USAGE
+# ============================================================================
+
+# Set your base directory
+BASE_DIR = ""
+
+# ── Step 1: Dry run — preview every rename, write nothing ──────────────
+renamer = TempColumnRenamer(BASE_DIR)
+report = renamer.process_all(dry_run=True)
+
+# Optionally export the preview to CSV for review
+renamer.export_report('./rename_preview')
+
+# ── Step 2: Apply renames only after reviewing the dry-run report ──────
+# renamer_live = TempColumnRenamer(BASE_DIR)
+# renamer_live.process_all(dry_run=False)
+# renamer_live.export_report('./rename_results')
+```

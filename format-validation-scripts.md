@@ -1,12 +1,23 @@
 Code to validate all traverse folders and files follow the correct format:
 
 ```python
+# Import libraries for processing data
+from pathlib import Path
+import re
+import pandas as pd
+import geopandas as gpd
+from collections import defaultdict
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
+```
+
+```python
 """
-Validate Heat Watch data structure against standard format
+Validate Heat Watch file structure against standard format
 Checks city folders, traverses folders, and traverse files
 """
 
-class HeatWatchDataValidator:
+class HeatWatchFolderFileValidator:
     """Validate Heat Watch data structure and file naming conventions"""
     
     def __init__(self, base_dir):
@@ -332,105 +343,343 @@ class HeatWatchDataValidator:
         
         pd.DataFrame([summary]).to_csv(output_dir / 'validation_summary.csv', index=False)
         print(f"Summary exported to: {output_dir / 'validation_summary.csv'}")
+
+# ============================================================================
+# USAGE
+# ============================================================================
+
+# Set your base directory
+BASE_DIR = ""
+
+validator = HeatWatchDataValidator(BASE_DIR)
+results = validator.validate_all()
+
+# Export reports
+validator.export_report("./validation_reports")
 ```
 
-Code to validate all temperature column names:
+Code to validate temperature column names:
 
 ```python
-class TraverseTempColumnAnalyzer:
-    """Analyze traverse point data from Heat Watch campaigns"""
+class TraverseTempColumnValidator:
+    """
+    Validate temperature column names in traverse shapefiles across all Heat Watch cities.
 
-    def extract_city_name(self, city_dir_name):
-        """Clean up city name from directory"""
-        # Remove 'Heat Watch ' prefix if present
-        city_name = city_dir_name.replace('Heat Watch ', '')
-        return city_name
-    
+    Per data-format.md, every traverse shapefile MUST contain a 'temp_f' column.
+    Other temperature column variants (e.g. 'T_C', 'T_F', 'Temprtr') are flagged as
+    warnings so they can be reviewed and renamed during normalization.
+    """
+
+    # The single required temperature column name per data-format.md
+    REQUIRED_TEMP_COLUMN = 'temp_f'
+
+    # Recognized non-standard temperature column names (trigger warnings, not errors)
+    KNOWN_TEMP_VARIANTS = ['Temprtr', 't_f', 'T', 'T_F', 'T_C', 't_c', 'temp_c']
+
+    # Substrings used to detect any temperature-like column not in the above sets
+    TEMP_INDICATORS = ['temp', 'hi_f']
+
     def __init__(self, data_root):
         self.data_root = Path(data_root)
-        self.traverse_data = []
-        self.cities = []
+        self.errors = []
+        self.warnings = []
+        # Full inventory of all files scanned (for export/reporting)
+        self._file_records = []
 
-    def print_traversefile_columns(self, shapefile_path, city_name):
-        """Load and extract data from traverse shapefile"""
+    def _extract_city_name(self, city_dir_name: str) -> str:
+        """Clean up city name from directory"""
+        # Remove 'Heat Watch ' prefix if present
+        return city_dir_name.replace('Heat Watch ', '')
+
+    def _detect_temp_columns(self, columns: list[str]) -> dict:
+        """
+        Categorise all columns in a shapefile by temperature role.
+
+        Returns a dict with keys:
+          - 'has_required'  : bool  — True if 'temp_f' is present
+          - 'known_variants': list  — recognised non-standard temp columns
+          - 'unknown_temp'  : list  — columns that look like temperature but are unrecognised
+          - 'all_temp_cols' : list  — union of the above three groups
+        """
+        has_required = self.REQUIRED_TEMP_COLUMN in columns
+        known_variants = [c for c in columns if c in self.KNOWN_TEMP_VARIANTS]
+        all_temp_cols = ([self.REQUIRED_TEMP_COLUMN] if has_required else []) + known_variants
+
+        # Heuristic scan for anything else that looks like temperature
+        unknown_temp = [
+            c for c in columns
+            if c not in all_temp_cols
+            and any(ind.lower() in c.lower() for ind in self.TEMP_INDICATORS)
+        ]
+        all_temp_cols += unknown_temp
+
+        return {
+            'has_required': has_required,
+            'known_variants': known_variants,
+            'unknown_temp': unknown_temp,
+            'all_temp_cols': all_temp_cols,
+        }
+
+    # Per-file validation
+    def validate_shapefile(self, shapefile_path: Path, city_name: str) -> dict | None:
+        """
+        Validate a single traverse shapefile's temperature columns.
+
+        Returns a record dict (used for reporting), or None on load failure.
+        """
         try:
             gdf = gpd.read_file(shapefile_path)
-            
-            # Look for temperature field - could be named various ways
-            temp_fields = [col for col in gdf.columns if any(
-                temp_indicator in col
-                for temp_indicator in ['temp_f', 'Temprtr', 't_f', 'T_C', 'T_F', 'T', 't_c']
-            )]
-
-            if not temp_fields:
-                print(f"Warning: No temperature field found in {shapefile_path.name} for {city_name}")
-                return None
-            
-            return {
-                'temp_fields': temp_fields,
-            }
-            
-        except Exception as e:
-            print(f"Error loading {shapefile_path}: {e}")
+        except Exception as exc:
+            self.errors.append({
+                'type': 'shapefile_load_error',
+                'city': city_name,
+                'path': str(shapefile_path),
+                'filename': shapefile_path.name,
+                'issue': f'Could not open shapefile: {exc}',
+            })
             return None
-    
-    def load_traverses(self):
-        """Load all traverse files from all cities"""
-        print("Loading traverse data from all cities...")
-        
-        for city_dir in sorted(self.data_root.iterdir()):
-            if not city_dir.is_dir():
-                continue
-            
-            city_name = self.extract_city_name(city_dir.name)
-            
-            # Find traverses folders based on common patterns
-            traverse_folders = list(city_dir.glob('traverses*'))
 
-            # If no specific traverses folder exists, check main directory
-            if not traverse_folders:
-                traverse_folders = [city_dir]
+        columns = list(gdf.columns)
+        temp_info = self._detect_temp_columns(columns)
 
-            # Track processed files to avoid duplicates
-            processed_files = set()
-            
-            for traverse_folder in traverse_folders:
-                # Find all shapefiles (non-recursive to avoid duplicates)
-                shapefiles = list(traverse_folder.glob('*trav.shp'))
-                
-                for shp_path in shapefiles:
-                    # Skip if already processed
-                    if str(shp_path) in processed_files:
-                        continue
-                    
-                    processed_files.add(str(shp_path))
-                    
-                    traverse_info = self.print_traversefile_columns(shp_path, city_name)
-                    
-                    count_Temprtr = 0
-                    count_t_f = 0
-                    count_temp_f = 0
-                    count_T = 0
-                    count_T_F = 0
-                    for f in traverse_info['temp_fields']:
-                        if f == 'Temprtr': count_Temprtr += 1
-                        if f == 't_f': count_t_f += 1
-                        if f == 'temp_f': count_temp_f += 1
-                        if f == 'T': count_T += 1
-                        if f == 'T_F': count_T_F += 1
-                    
-                    self.traverse_data.append({
-                        'city': city_name,
-                        'filename': shp_path.name,
-                        'temp_fields': traverse_info['temp_fields'],
-                        'Temprtr count': count_Temprtr,
-                        't_f count': count_t_f,
-                        'temp_f count': count_temp_f,
-                        'T count': count_T,
-                        'T_F count': count_T_F,
-                    })
+        record = {
+            'city': city_name,
+            'filename': shapefile_path.name,
+            'path': str(shapefile_path),
+            'all_columns': columns,
+            'has_required_temp_f': temp_info['has_required'],
+            'known_variant_cols': temp_info['known_variants'],
+            'unknown_temp_cols': temp_info['unknown_temp'],
+            'all_temp_cols': temp_info['all_temp_cols'],
+            'status': 'ok',
+        }
 
-        self.df = pd.DataFrame(self.traverse_data)
-        print(f"\nLoaded {len(self.df)} traverse files from {self.df['city'].nunique()} cities")
-        return self.df
+        # ERROR: missing required 'temp_f'
+        if not temp_info['has_required']:
+            record['status'] = 'error'
+            self.errors.append({
+                'type': 'missing_required_temp_column',
+                'city': city_name,
+                'path': str(shapefile_path),
+                'filename': shapefile_path.name,
+                'issue': (
+                    f"Required column '{self.REQUIRED_TEMP_COLUMN}' not found. "
+                    f"Temperature-like columns present: {temp_info['all_temp_cols'] or 'none'}"
+                ),
+            })
+
+        # WARNING: known non-standard variants present
+        if temp_info['known_variants']:
+            record['status'] = record['status'] if record['status'] == 'error' else 'warning'
+            self.warnings.append({
+                'type': 'non_standard_temp_column',
+                'city': city_name,
+                'path': str(shapefile_path),
+                'filename': shapefile_path.name,
+                'issue': (
+                    f"Non-standard (but recognised) temperature columns found: "
+                    f"{temp_info['known_variants']}. "
+                    f"These should be renamed to '{self.REQUIRED_TEMP_COLUMN}' or 'T_C' "
+                    f"during normalisation."
+                ),
+                'columns': temp_info['known_variants'],
+            })
+
+        # WARNING: unrecognised temperature-like columns
+        if temp_info['unknown_temp']:
+            record['status'] = record['status'] if record['status'] == 'error' else 'warning'
+            self.warnings.append({
+                'type': 'unrecognised_temp_column',
+                'city': city_name,
+                'path': str(shapefile_path),
+                'filename': shapefile_path.name,
+                'issue': (
+                    f"Unrecognised temperature-like columns found: {temp_info['unknown_temp']}. "
+                    f"Manually verify whether these are temperature columns."
+                ),
+                'columns': temp_info['unknown_temp'],
+            })
+
+        return record
+
+    # City-level traversal
+    def validate_city(self, city_dir: Path):
+        """Validate all traverse shapefiles within a single city folder."""
+        city_name = self._extract_city_name(city_dir.name)
+
+        traverse_folders = list(city_dir.glob('traverses*'))
+        if not traverse_folders:
+            # Fallback: look directly in the city folder
+            traverse_folders = [city_dir]
+
+        processed = set()
+        for folder in traverse_folders:
+            for shp_path in sorted(folder.glob('*trav.shp')):
+                if str(shp_path) in processed:
+                    continue
+                processed.add(str(shp_path))
+
+                record = self.validate_shapefile(shp_path, city_name)
+                if record:
+                    self._file_records.append(record)
+
+    # Full dataset validation
+    def validate_all(self) -> dict | None:
+        """Validate temperature columns in every city folder under data_root."""
+        if not self.data_root.exists():
+            print(f"Error: Base directory does not exist: {self.data_root}")
+            return None
+
+        city_dirs = sorted([d for d in self.data_root.iterdir() if d.is_dir()])
+        print(f"Found {len(city_dirs)} city folders")
+        print("=" * 70)
+
+        for city_dir in city_dirs:
+            self.validate_city(city_dir)
+
+        return self.generate_report()
+
+    # Reporting
+    def generate_report(self) -> dict | None:
+        """Print a structured validation report and return DataFrames."""
+        print("\n" + "=" * 70)
+        print("TEMPERATURE COLUMN VALIDATION REPORT")
+        print("=" * 70)
+
+        total_files = len(self._file_records)
+        total_issues = len(self.errors) + len(self.warnings)
+
+        print(f"\nTotal traverse shapefiles scanned: {total_files}")
+
+        if total_issues == 0:
+            print("\n✓ All traverse shapefiles contain the required 'temp_f' column!")
+            return None
+
+        print(f"\nTotal Issues Found: {total_issues}")
+        print(f"  Errors   (must fix) : {len(self.errors)}")
+        print(f"  Warnings (review)   : {len(self.warnings)}")
+
+        if self.errors:
+            print("\n" + "=" * 70)
+            print("ERRORS (Must Fix)")
+            print("=" * 70)
+
+            errors_df = pd.DataFrame(self.errors)
+            print("\nErrors by Type:")
+            for error_type, count in errors_df['type'].value_counts().items():
+                print(f"  {error_type}: {count}")
+
+            print("\nDetailed Errors:")
+            for idx, err in enumerate(self.errors[:20], 1):
+                print(f"\n{idx}. {err['type'].upper()}")
+                print(f"   City    : {err.get('city', 'N/A')}")
+                print(f"   File    : {err.get('filename', 'N/A')}")
+                print(f"   Issue   : {err['issue']}")
+                print(f"   Path    : {err['path']}")
+
+            if len(self.errors) > 20:
+                print(f"\n... and {len(self.errors) - 20} more errors")
+
+        if self.warnings:
+            print("\n" + "=" * 70)
+            print("WARNINGS (Should Review)")
+            print("=" * 70)
+
+            warnings_df = pd.DataFrame(self.warnings)
+            print("\nWarnings by Type:")
+            for warn_type, count in warnings_df['type'].value_counts().items():
+                print(f"  {warn_type}: {count}")
+
+            # Column-name frequency table — useful for deciding what to normalise
+            all_variant_cols = []
+            for w in self.warnings:
+                all_variant_cols.extend(w.get('columns', []))
+            if all_variant_cols:
+                variant_series = pd.Series(all_variant_cols).value_counts()
+                print("\nNon-standard Temperature Column Name Frequencies:")
+                for col_name, count in variant_series.items():
+                    print(f"  '{col_name}': {count} file(s)")
+
+            print("\nDetailed Warnings (first 10):")
+            for idx, warn in enumerate(self.warnings[:10], 1):
+                print(f"\n{idx}. {warn['type'].upper()}")
+                print(f"   City    : {warn.get('city', 'N/A')}")
+                print(f"   File    : {warn.get('filename', 'N/A')}")
+                print(f"   Issue   : {warn['issue']}")
+
+            if len(self.warnings) > 10:
+                print(f"\n... and {len(self.warnings) - 10} more warnings")
+
+        print("\n" + "=" * 70)
+        print("CONFORMANCE SUMMARY BY CITY")
+        print("=" * 70)
+        records_df = pd.DataFrame(self._file_records)
+        city_summary = (
+            records_df.groupby('city')['status']
+            .value_counts()
+            .unstack(fill_value=0)
+            .reindex(columns=['ok', 'warning', 'error'], fill_value=0)
+        )
+        print(city_summary.to_string())
+
+        return {
+            'errors': pd.DataFrame(self.errors) if self.errors else None,
+            'warnings': pd.DataFrame(self.warnings) if self.warnings else None,
+            'file_records': records_df,
+        }
+
+    def export_report(self, output_dir: str):
+        """Export validation report CSVs to output_dir."""
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        if self.errors:
+            errors_path = output_dir / 'temp_column_errors.csv'
+            pd.DataFrame(self.errors).to_csv(errors_path, index=False)
+            print(f"\nErrors exported to: {errors_path}")
+
+        if self.warnings:
+            warnings_path = output_dir / 'temp_column_warnings.csv'
+            pd.DataFrame(self.warnings).to_csv(warnings_path, index=False)
+            print(f"Warnings exported to: {warnings_path}")
+
+        if self._file_records:
+            records_df = pd.DataFrame(self._file_records)
+
+            # Full per-file inventory
+            inventory_path = output_dir / 'temp_column_inventory.csv'
+            records_df.to_csv(inventory_path, index=False)
+            print(f"Full file inventory exported to: {inventory_path}")
+
+            # Summary
+            summary = {
+                'total_files_scanned': len(records_df),
+                'files_ok': int((records_df['status'] == 'ok').sum()),
+                'files_with_warnings': int((records_df['status'] == 'warning').sum()),
+                'files_with_errors': int((records_df['status'] == 'error').sum()),
+                'total_errors': len(self.errors),
+                'total_warnings': len(self.warnings),
+                'cities_with_errors': len(
+                    set(e.get('city', 'Unknown') for e in self.errors)
+                ),
+                'cities_with_warnings': len(
+                    set(w.get('city', 'Unknown') for w in self.warnings)
+                ),
+            }
+            summary_path = output_dir / 'temp_column_summary.csv'
+            pd.DataFrame([summary]).to_csv(summary_path, index=False)
+            print(f"Summary exported to: {summary_path}")
+
+# ============================================================================
+# USAGE
+# ============================================================================
+
+# Set your base directory
+BASE_DIR = ""
+
+validator = TraverseTempColumnValidator(BASE_DIR)
+results = validator.validate_all()
+
+# Optionally export all CSVs
+validator.export_report('./validation_output')
 ```
