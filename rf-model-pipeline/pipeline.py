@@ -4,9 +4,12 @@ import geopandas as gpd
 import rasterio
 from rasterio.enums import Resampling as RioResampling
 from rasterio.transform import from_origin as _rasterio_from_origin
+import rasterio.errors
+from rasterio.features import geometry_mask
 import matplotlib.pyplot as plt
 import xarray as xr
 import os
+import time
 
 from scipy.ndimage import convolve
 from sklearn.ensemble import RandomForestRegressor
@@ -17,18 +20,21 @@ from pathlib import Path
 import pystac_client
 import planetary_computer
 import rioxarray
+from rioxarray.exceptions import NoDataInBounds
 from shapely.geometry import box
 from scipy.signal import fftconvolve
 from joblib import Parallel, delayed
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 
 # ---------------------------------------------------------------------------
 # STEP 0.5: Clean the observation data (nodata codes, implausible values)
 # ---------------------------------------------------------------------------
-def clean_temperature_observations(gdf: gpd.GeoDataFrame, source_col: str = "temp_f",
-                                    output_col: str = "temperature_f",
+def clean_temperature_observations(gdf: gpd.GeoDataFrame, source_col: str = "temp_c",
+                                    output_col: str = "temperature_c",
                                     nodata_values: tuple = (-9999.0, -999.0, -99.0, 9999.0),
-                                    valid_range_f: tuple = (-22.0, 131.0),
+                                    valid_range: tuple = (-22.0, 131.0),
                                     verbose: bool = True) -> gpd.GeoDataFrame:
     """
     Cleans sentinel nodata codes and physically implausible values out of
@@ -54,7 +60,7 @@ def clean_temperature_observations(gdf: gpd.GeoDataFrame, source_col: str = "tem
         1. Replace known nodata sentinel codes with NaN, in the source
            column.
         2. Copy remaining valid values to `output_col` (default
-           "temperature_f", matching what build_training_table() and
+           "temperature_c", matching what build_training_table() and
            train_rf_model() expect downstream).
         3. Flag any value outside `valid_range_f` as NaN too -- catches
            sensor glitches or undocumented sentinel codes not in your
@@ -62,14 +68,6 @@ def clean_temperature_observations(gdf: gpd.GeoDataFrame, source_col: str = "tem
         4. Drop rows with NaN in `output_col` (can't train or evaluate
            without a valid target).
         5. Print a before/after summary so you can confirm what was caught.
-
-    `valid_range_f` defaults to (-22, 131) degF -- the Fahrenheit
-    equivalent of a generous (-30, 55) degC bound for ground-level air
-    temperature during a summer heat traverse campaign in the continental
-    US. Tighten this if you have city- or season-specific expectations
-    (e.g. Shandas et al. 2019's traverses only ran on days above the 90th
-    percentile of historic highs, so a narrower lower bound would be
-    reasonable for a similarly-designed campaign).
     """
     n_start = len(gdf)
     gdf = gdf.copy()
@@ -77,7 +75,7 @@ def clean_temperature_observations(gdf: gpd.GeoDataFrame, source_col: str = "tem
     if verbose:
         raw_min, raw_max = gdf[source_col].min(), gdf[source_col].max()
         print(f"Before cleaning: {n_start} rows, "
-              f"{source_col} range [{raw_min:.2f}, {raw_max:.2f}] degF")
+              f"{source_col} range [{raw_min:.2f}, {raw_max:.2f}] degC")
 
     # Step 1: sentinel nodata codes -> NaN
     gdf[source_col] = gdf[source_col].replace(list(nodata_values), np.nan)
@@ -87,7 +85,7 @@ def clean_temperature_observations(gdf: gpd.GeoDataFrame, source_col: str = "tem
     gdf[output_col] = gdf[source_col]
 
     # Step 3: implausible values -> NaN
-    lo, hi = valid_range_f
+    lo, hi = valid_range
     out_of_range = (gdf[output_col] < lo) | (gdf[output_col] > hi)
     n_out_of_range = out_of_range.sum()
     gdf.loc[out_of_range, output_col] = np.nan
@@ -98,15 +96,15 @@ def clean_temperature_observations(gdf: gpd.GeoDataFrame, source_col: str = "tem
 
     if verbose:
         print(f"  Dropped {n_start - n_after_nodata} rows matching nodata codes {nodata_values}")
-        print(f"  Dropped {n_out_of_range} additional rows outside valid range {valid_range_f} degF")
+        print(f"  Dropped {n_out_of_range} additional rows outside valid range {valid_range} degC")
         print(f"After cleaning: {n_end} rows ({n_start - n_end} total dropped, "
               f"{100 * (n_start - n_end) / n_start:.1f}%)")
         print(f"  {output_col} range now "
-              f"[{gdf[output_col].min():.2f}, {gdf[output_col].max():.2f}] degF")
+              f"[{gdf[output_col].min():.2f}, {gdf[output_col].max():.2f}] degC")
 
     if n_end < 0.5 * n_start:
         print(f"  WARNING: more than half your observations were dropped. "
-              f"Double-check `nodata_values` and `valid_range_f` -- you may be "
+              f"Double-check `nodata_values` and `valid_range` -- you may be "
               f"discarding legitimate data, or your source file may use a "
               f"different nodata convention than assumed here.")
 
@@ -134,7 +132,11 @@ os.environ.setdefault("GDAL_HTTP_MERGE_CONSECUTIVE_RANGES", "YES")
 os.environ.setdefault("GDAL_HTTP_MULTIPLEX", "YES")
 os.environ.setdefault("GDAL_HTTP_VERSION", "2")
 os.environ.setdefault("VSI_CACHE", "TRUE")
- 
+os.environ["GDAL_HTTP_TIMEOUT"] = "60"
+os.environ["GDAL_HTTP_MAX_RETRY"] = "5"
+os.environ["GDAL_HTTP_RETRY_DELAY"] = "3"
+
+
 _CATALOG = pystac_client.Client.open(
     "https://planetarycomputer.microsoft.com/api/stac/v1",
     modifier=planetary_computer.sign_inplace,
@@ -142,7 +144,7 @@ _CATALOG = pystac_client.Client.open(
  
  
 COVERAGE_CHECK_BAND = "B04"  # cheap reference band used to evaluate candidate scenes
-MIN_VALID_COVERAGE = 0.98    # required fraction of non-NaN pixels within a tile's own AOI-overlap region
+MIN_VALID_COVERAGE = 0.92    # required fraction of non-NaN pixels within a tile's own AOI-overlap region
 MIN_TILE_OVERLAP_FRACTION = 0.01  # skip tiles contributing < 1% of the AOI+buffer area
  
 
@@ -165,71 +167,251 @@ def _clip_to_box(da, minx, miny, maxx, maxy, src_crs="EPSG:4326"):
     box_geom = gpd.GeoSeries([box(minx, miny, maxx, maxy)], crs=src_crs).to_crs(da.rio.crs).iloc[0]
     bminx, bminy, bmaxx, bmaxy = box_geom.bounds
     return da.rio.clip_box(minx=bminx, miny=bminy, maxx=bmaxx, maxy=bmaxy)
+
+def _mask_s2_nodata(da):
+    """Converts Sentinel-2 no-data pixels (DN == 0) to NaN.
+     
+    Sentinel-2 L2A uses 0 as its no-data value (swath edges, detector
+    gaps, outside-footprint corners of an MGRS tile). rioxarray's
+    open_rasterio(masked=True) only does this conversion if the file
+    carries a nodata tag; if it doesn't, those zeros stay in the data as
+    if they were real reflectance. They then (a) count as "valid" in the
+    coverage check, (b) win the first-valid-wins merge over real data from
+    another tile, and (c) feed constant values into the focal buffers,
+    producing sharp, slanted artifacts in the predicted surface.
  
- 
-def _select_best_covering_item(candidates: list, aoi_ref_box, reference_crs: str, tile_id: str):
+    Real valid pixels are never exactly 0 (the minimum valid L2A DN is 1),
+    so masking == 0 is safe. Call this right after clipping (so only the
+    small AOI window is touched, not the full ~110 km tile) and before the
+    coverage check / merge / reprojection.
     """
-    Picks the candidate scene for one MGRS tile based on ACTUAL VALID
-    PIXEL COVERAGE within the AOI -- not `eo:cloud_cover` (a whole-tile
-    average) and not naive np.isfinite(clipped).mean() (which silently
-    measures against whatever smaller region clip_box happened to
-    return, NOT the full requested AOI -- a tile covering just 5% of the
-    AOI corner can report a misleading 100% by that naive metric).
+    return da.where(da != 0)
+
  
-    Correct approach: for each candidate, intersect the TILE'S OWN
-    geographic bounds with the AOI (in a shared metric reference CRS) to
-    get the region this tile is actually responsible for. Clip to that
-    intersection specifically, then measure valid-pixel fraction within
-    it. A tile that only overlaps a small sliver of the AOI will
-    correctly show a small (but still potentially 100%-valid) region --
-    that's fine, since other tiles cover the rest; what this catches is a
-    tile whose swath has GAPS within the portion it's actually supposed
-    to cover.
+# ---------------------------------------------------------------------------
+# Scene screening, selection and cross-scene gap-filling
+# ---------------------------------------------------------------------------
+# A Sentinel-2 scene's real imaged swath is slanted relative to the MGRS
+# tile grid, so a tile's corner can be no-data (DN == 0) even though the
+# tile nominally covers it. Instead of accepting or rejecting whole scenes,
+# the functions below (1) measure each candidate's REAL valid-pixel map on
+# a small common canvas, cheaply, from a COG overview; (2) pick the best
+# scene per tile; and (3) add a few "fill" scenes (other dates/orbits) that
+# cover whatever the best scenes miss. manual_merge() is "first valid wins",
+# so listing the best scenes first and the fill scenes after them means
+# fill scenes only ever supply pixels the best scenes don't have.
  
-    Returns (best_item, best_coverage, tile_ref_box) -- tile_ref_box is
-    this tile's own footprint in `reference_crs`, used by the caller to
-    track combined coverage across all selected tiles.
-    """
-    best_item, best_coverage, best_tile_ref_box = None, -1.0, None
+SCREEN_RES_M = 40.0            # resolution of the screening canvas
+SCREEN_OVERVIEW_LEVEL = 1      # COG overview to read for screening (1 = ~4x decimated: ~40 m for a 10 m band)
+SCREEN_WORKERS = 4             # candidates screened in parallel (1 = serial)
+FILL_TARGET_COVERAGE = 0.995   # stop adding fill scenes once this fraction of AOI+buffer has valid data
+MAX_FILL_SCENES = 3            # never add more than this many fill scenes
+MIN_FILL_GAIN = 0.005          # a fill scene must add at least this fraction of the AOI+buffer
+READ_RETRIES = 3               # attempts per read (each attempt re-signs the URL)
  
-    for item in candidates:
-        href = item.assets[COVERAGE_CHECK_BAND].href
-        da = rioxarray.open_rasterio(href, masked=True).squeeze("band", drop=True)
  
+def _fresh_href(item, band_name: str) -> str:
+    """Returns a freshly signed URL for one asset. Planetary Computer SAS
+    tokens are short-lived and the STAC search signs them only once, so a
+    long run can end up reading with an expired token. Re-signing right
+    before each read (planetary_computer.sign caches tokens and renews
+    expired ones) avoids that. Any old query string is stripped first so
+    the old token isn't carried along."""
+    base_href = item.assets[band_name].href.split("?", 1)[0]
+    return planetary_computer.sign(base_href)
+ 
+ 
+def _with_retries(fn, item, band_name: str, label: str, retries: int = READ_RETRIES):
+    """Calls fn(fresh_signed_href), retrying on I/O errors (network
+    timeouts, expired tokens) with a freshly signed URL each time.
+    `fn` must do the actual pixel read inside itself (e.g. call .load()),
+    because rioxarray reads lazily and errors only surface at read time."""
+    for attempt in range(1, retries + 1):
+        try:
+            return fn(_fresh_href(item, band_name))
+        except (OSError, rasterio.errors.RasterioIOError) as exc:
+            if attempt == retries:
+                raise
+            wait = 5 * attempt
+            print(f"    {label}: read failed ({type(exc).__name__}: {str(exc)[:100]}). "
+                  f"Re-signing URL and retrying in {wait}s (attempt {attempt + 1}/{retries})...")
+            time.sleep(wait)
+ 
+ 
+def _scene_label(item) -> str:
+    orbit = item.properties.get("sat:relative_orbit")
+    orbit_txt = f", R{int(orbit):03d}" if orbit is not None else ""
+    return (f"{item.properties.get('s2:mgrs_tile', '?')} "
+            f"({item.properties['eo:cloud_cover']:.1f}% cloud, "
+            f"{item.properties['datetime'][:10]}{orbit_txt})")
+ 
+ 
+def _build_screen_canvas(bounds, resolution: float, crs):
+    """Empty all-NaN DataArray used as the common grid for screening."""
+    minx, miny, maxx, maxy = bounds
+    width = int(np.ceil((maxx - minx) / resolution))
+    height = int(np.ceil((maxy - miny) / resolution))
+    transform = _rasterio_from_origin(minx, maxy, resolution, resolution)
+    canvas = xr.DataArray(
+        np.full((height, width), np.nan, dtype="float32"), dims=("y", "x"),
+        coords={"y": [maxy - resolution * (i + 0.5) for i in range(height)],
+                "x": [minx + resolution * (i + 0.5) for i in range(width)]},
+    )
+    canvas = canvas.rio.write_crs(crs)
+    canvas = canvas.rio.write_transform(transform)
+    return canvas.rio.write_nodata(np.nan)
+ 
+ 
+def _open_overview(href: str, level: int):
+    """Opens a COG at an overview level (a coarse, much smaller copy of the
+    image stored inside the file), falling back to the deepest overview the
+    file actually has. Reading ~4x decimated data is ~16x less data."""
+    with rasterio.open(href) as src:
+        n_overviews = len(src.overviews(1))
+    kwargs = {"overview_level": min(level, n_overviews - 1)} if n_overviews else {}
+    return rioxarray.open_rasterio(href, masked=False, **kwargs).squeeze("band", drop=True)
+ 
+ 
+@dataclass(eq=False)  # eq=False -> compared by identity (fields hold numpy arrays)
+class _Screen:
+    item: object
+    tile_ref_box: object      # tile footprint in reference_crs
+    valid: np.ndarray         # bool, True where this scene has real data, on the screening canvas
+    coverage: float           # valid fraction within this tile's own AOI-overlap region
+ 
+ 
+def _screen_candidate(item, aoi_ref_box, reference_crs: str, canvas):
+    """Measures one candidate scene's real valid-pixel map (DN == 0 is
+    no-data) on the common screening canvas, reading only a coarse COG
+    overview. Returns a _Screen, or None if the scene doesn't overlap the AOI."""
+    def _load(href):
+        da = _open_overview(href, SCREEN_OVERVIEW_LEVEL)
         tile_ref_box = gpd.GeoSeries([box(*da.rio.bounds())], crs=da.rio.crs).to_crs(reference_crs).iloc[0]
-        relevant_region = tile_ref_box.intersection(aoi_ref_box)
-        if relevant_region.is_empty:
-            print(f"    tile {tile_id}: candidate {item.id} does not actually overlap the AOI -- skipping")
+        region = tile_ref_box.intersection(aoi_ref_box)
+        if region.is_empty:
+            return tile_ref_box, region, None
+        try:
+            clipped = _clip_to_box(da, *aoi_ref_box.bounds, src_crs=reference_crs)
+        except NoDataInBounds:
+            return tile_ref_box, region, None
+        clipped = _mask_s2_nodata(clipped).astype("float32").load()  # .load() = read happens here, inside the retry
+        clipped = clipped.rio.write_nodata(np.nan)
+        aligned = clipped.rio.reproject_match(canvas, resampling=RioResampling.nearest)
+        return tile_ref_box, region, np.isfinite(aligned.values)
+ 
+    tile_ref_box, region, valid = _with_retries(
+        _load, item, COVERAGE_CHECK_BAND, f"screen {item.id}"
+    )
+    if valid is None:
+        return None
+    in_region = geometry_mask([region], out_shape=canvas.shape,
+                              transform=canvas.rio.transform(), invert=True)
+    coverage = float(valid[in_region].mean()) if in_region.any() else 0.0
+    return _Screen(item=item, tile_ref_box=tile_ref_box, valid=valid, coverage=coverage)
+ 
+ 
+def _pick_best_per_tile(screens: list) -> "_Screen":
+    """Best scene for one tile. `screens` must be sorted by cloud cover
+    ascending; a later (cloudier) scene replaces the current pick only if it
+    has clearly more real coverage (> 1 percentage point more)."""
+    best = None
+    for s in screens:
+        if best is None or s.coverage > best.coverage + 0.01:
+            best = s
+    return best
+ 
+ 
+def _greedy_gap_fill(remaining: list, union: np.ndarray,
+                     target: float = FILL_TARGET_COVERAGE,
+                     max_scenes: int = MAX_FILL_SCENES,
+                     min_gain: float = MIN_FILL_GAIN):
+    """Greedily adds the scene that fills the most still-empty canvas pixels,
+    until `target` coverage is reached, `max_scenes` are used, or no
+    remaining scene adds at least `min_gain` of the canvas.
+    Returns (list of (screen, gain_fraction), final_union)."""
+    union = union.copy()
+    remaining = list(remaining)
+    chosen = []
+    while remaining and len(chosen) < max_scenes and union.mean() < target:
+        gains = [(np.count_nonzero(s.valid & ~union) / union.size, s) for s in remaining]
+        gain, best = max(gains, key=lambda g: g[0])
+        if gain < min_gain:
+            break
+        chosen.append((best, gain))
+        union |= best.valid
+        remaining = [s for s in remaining if s is not best]
+    return chosen, union
+ 
+ 
+def _select_scenes_with_gap_fill(candidates_by_tile: dict, aoi_ref_box, reference_crs: str):
+    """For each kept tile: screens every candidate scene (cheaply, in
+    parallel), picks the best one, then adds fill scenes (any tile, any
+    date in the search window) that cover what the best scenes miss.
+ 
+    Returns (primary_screens {tile_id: _Screen}, fill_screens [(_Screen, gain)],
+             valid_coverage_fraction of the AOI+buffer after gap-fill)."""
+    canvas = _build_screen_canvas(aoi_ref_box.bounds, SCREEN_RES_M, reference_crs)
+    jobs = [(tile_id, item) for tile_id, cands in candidates_by_tile.items() for item in cands]
+    print(f"Screening {len(jobs)} candidate scene(s) from a coarse COG overview "
+          f"(~{SCREEN_RES_M:.0f} m) -- far less data than reading full resolution...")
+ 
+    def _run(job):
+        tile_id, item = job
+        return tile_id, _screen_candidate(item, aoi_ref_box, reference_crs, canvas)
+ 
+    if SCREEN_WORKERS > 1:
+        with ThreadPoolExecutor(max_workers=SCREEN_WORKERS) as pool:
+            outputs = list(pool.map(_run, jobs))
+    else:
+        outputs = [_run(j) for j in jobs]
+ 
+    screens_by_tile = {}
+    for tile_id, screen in outputs:          # jobs were built in cloud-ascending order per tile
+        if screen is None:
+            print(f"    tile {tile_id}: a candidate does not actually overlap the AOI -- skipping")
             continue
+        screens_by_tile.setdefault(tile_id, []).append(screen)
+        print(f"    tile {tile_id}: {_scene_label(screen.item)} "
+              f"-> {screen.coverage*100:.1f}% valid within its own AOI-overlap region")
  
-        rminx, rminy, rmaxx, rmaxy = relevant_region.bounds
-        clipped = _clip_to_box(da, rminx, rminy, rmaxx, rmaxy, src_crs=reference_crs)
-        coverage = float(np.isfinite(clipped.values).mean()) if clipped.size else 0.0
-        print(f"    tile {tile_id}: candidate {item.id} "
-              f"({item.properties['eo:cloud_cover']:.1f}% cloud, {item.properties['datetime'][:10]}) "
-              f"-> {coverage*100:.1f}% valid within its own AOI-overlap region")
+    primaries = {}
+    for tile_id in candidates_by_tile:
+        if not screens_by_tile.get(tile_id):
+            raise ValueError(
+                f"No candidate for tile {tile_id} actually overlaps the AOI. "
+                f"This shouldn't happen after pre-filtering -- investigate the "
+                f"tile grouping logic."
+            )
+        primaries[tile_id] = _pick_best_per_tile(screens_by_tile[tile_id])
+        p = primaries[tile_id]
+        flag = "" if p.coverage >= MIN_VALID_COVERAGE else \
+            f"  <-- below {MIN_VALID_COVERAGE*100:.0f}%; will try to fill the gap from other scenes"
+        print(f"  tile {tile_id}: best scene {_scene_label(p.item)} "
+              f"({p.coverage*100:.1f}% valid){flag}")
  
-        if coverage > best_coverage:
-            best_item, best_coverage, best_tile_ref_box = item, coverage, tile_ref_box
-        if coverage >= MIN_VALID_COVERAGE:
-            return best_item, best_coverage, best_tile_ref_box
+    union = np.zeros(canvas.shape, dtype=bool)
+    for p in primaries.values():
+        union |= p.valid
+    primary_cov = float(union.mean())
+    print(f"Best scenes together have real data over {primary_cov*100:.1f}% of the AOI+buffer.")
  
-    if best_item is None:
-        raise ValueError(
-            f"No candidate for tile {tile_id} actually overlaps the AOI. "
-            f"This shouldn't happen after pre-filtering -- investigate the "
-            f"tile grouping logic."
-        )
- 
-    print(f"    WARNING: no candidate for tile {tile_id} reached "
-          f"{MIN_VALID_COVERAGE*100:.0f}% coverage within its own AOI-overlap region. "
-          f"Using the best available ({best_item.id}, {best_coverage*100:.1f}%) -- "
-          f"expect some NaN gap in the final output for this tile's portion of the AOI. "
-          f"Try widening date_window_days to search for a better-covering scene.")
-    return best_item, best_coverage, best_tile_ref_box
- 
- 
-def search_and_select_tiles(bbox: list, target_date: str, cloud_thresh: int = 20,
+    chosen_ids = {id(p) for p in primaries.values()}
+    remaining = [s for ss in screens_by_tile.values() for s in ss if id(s) not in chosen_ids]
+    fills, union = _greedy_gap_fill(remaining, union)
+    for s, gain in fills:
+        print(f"  gap-fill: adding {_scene_label(s.item)} -> +{gain*100:.1f}% of the AOI+buffer")
+    final_cov = float(union.mean())
+    if fills:
+        print(f"After gap-fill: real data over {final_cov*100:.1f}% of the AOI+buffer "
+              f"(fill pixels come from a different date/orbit than the best scenes).")
+    if final_cov < FILL_TARGET_COVERAGE:
+        print(f"  WARNING: {(1 - final_cov)*100:.1f}% of the AOI+buffer has no valid data in ANY "
+              f"candidate scene. It will be NaN in the output. Try widening date_window_days "
+              f"or raising cloud_thresh to bring in more scenes.")
+    return primaries, fills, final_cov
+
+
+def _search_and_select_tiles(bbox: list, target_date: str, cloud_thresh: int = 20,
                               date_window_days: int = 10, clip_buffer_m: float = 1500.0) -> dict:
     """
     Shared logic for finding, filtering, and selecting the best-covering
@@ -294,7 +476,10 @@ def search_and_select_tiles(bbox: list, target_date: str, cloud_thresh: int = 20
     all_tile_footprints = {}
     filtered_candidates_by_tile = {}
     for tile_id, candidates in candidates_by_tile.items():
-        probe = rioxarray.open_rasterio(candidates[0].assets[COVERAGE_CHECK_BAND].href, masked=False)
+        probe = _with_retries(
+            lambda href: rioxarray.open_rasterio(href, masked=False),
+            candidates[0], COVERAGE_CHECK_BAND, f"probe {tile_id}",
+        )
         tile_ref_box = gpd.GeoSeries([box(*probe.rio.bounds())], crs=probe.rio.crs).to_crs(reference_crs).iloc[0]
         overlap_fraction = tile_ref_box.intersection(aoi_ref_box).area / aoi_ref_box.area
         print(f"  tile {tile_id}: overlaps {overlap_fraction*100:.2f}% of the AOI+buffer area")
@@ -315,23 +500,23 @@ def search_and_select_tiles(bbox: list, target_date: str, cloud_thresh: int = 20
     print("Selecting the best-covering scene per tile (checked against each tile's own "
           "AOI-overlap region, not just whole-tile cloud %)...")
  
-    selected_items = []
-    selected_footprints = {}
+    primaries, fills, valid_coverage_fraction = _select_scenes_with_gap_fill(
+        filtered_candidates_by_tile, aoi_ref_box, reference_crs
+    )
+    # Order matters: manual_merge() is "first valid pixel wins", so the best
+    # scene of every tile goes first and the gap-fill scenes come after them
+    # (they only ever supply pixels the best scenes don't have).
+    selected_items = [p.item for p in primaries.values()] + [s_.item for s_, _ in fills]
+    selected_footprints = {tile_id: p.tile_ref_box for tile_id, p in primaries.items()}
     covered_geom = None
-    for tile_id, candidates in filtered_candidates_by_tile.items():
-        item, coverage, tile_ref_box = _select_best_covering_item(candidates, aoi_ref_box, reference_crs, tile_id)
-        selected_items.append(item)
-        selected_footprints[tile_id] = tile_ref_box
-        piece = tile_ref_box.intersection(aoi_ref_box)
+    for tile_id, p in primaries.items():
+        piece = p.tile_ref_box.intersection(aoi_ref_box)
         covered_geom = piece if covered_geom is None else covered_geom.union(piece)
  
     total_coverage_fraction = covered_geom.area / aoi_ref_box.area if aoi_ref_box.area > 0 else 0.0
-    tile_summary = ", ".join(
-        f"{it.properties.get('s2:mgrs_tile', '?')} "
-        f"({it.properties['eo:cloud_cover']:.1f}% cloud, {it.properties['datetime'][:10]})"
-        for it in selected_items
-    )
-    print(f"Final selection ({len(selected_items)} tile(s)): {tile_summary}")
+    tile_summary = ", ".join(_scene_label(p.item) for p in primaries.values())
+    print(f"Final selection ({len(primaries)} best scene(s) + {len(fills)} gap-fill scene(s)): "
+          f"{tile_summary}" + "".join(f" + fill {_scene_label(s_.item)}" for s_, _ in fills))
     print(f"Combined selected tiles cover {total_coverage_fraction*100:.1f}% of the requested AOI+buffer area.")
     if total_coverage_fraction < 0.999:
         missing_bounds = aoi_ref_box.difference(covered_geom).bounds
@@ -350,8 +535,9 @@ def search_and_select_tiles(bbox: list, target_date: str, cloud_thresh: int = 20
         "selected_footprints": selected_footprints,
         "covered_geom": covered_geom,
         "total_coverage_fraction": total_coverage_fraction,
+        "fill_items": [s_.item for s_, _ in fills],
+        "valid_coverage_fraction": valid_coverage_fraction,
     }
-
 
 def plot_tile_coverage(bbox: list, target_date: str, cloud_thresh: int = 20,
                         date_window_days: int = 10, clip_buffer_m: float = 1500.0, ax=None,
@@ -387,7 +573,7 @@ def plot_tile_coverage(bbox: list, target_date: str, cloud_thresh: int = 20,
     numbers directly rather than just look at the plot.
     """
  
-    result = precomputed_selection or search_and_select_tiles(
+    result = precomputed_selection or _search_and_select_tiles(
         bbox, target_date, cloud_thresh, date_window_days, clip_buffer_m
     )
  
@@ -477,7 +663,7 @@ def get_sentinel2_bands(bbox: list, target_date: str, cloud_thresh: int = 20,
     APPROACH: search across a date window (not just the exact target
     date), group results by MGRS tile ID, and for each tile select the
     candidate scene with the best ACTUAL VALID-PIXEL COVERAGE within the
-    AOI (see _select_best_covering_item) -- not simply the lowest
+    AOI (see _select_scenes_with_gap_fill) -- not simply the lowest
     whole-tile cloud cover, since a scene's real imaged swath may not
     cover the specific part of the tile your AOI overlaps even when its
     overall cloud statistic looks good. Each selected tile is then
@@ -494,7 +680,7 @@ def get_sentinel2_bands(bbox: list, target_date: str, cloud_thresh: int = 20,
     network-efficiency clip, not the final precise one; clip_bands_to_aoi()
     still runs afterward to produce the exact final extent.
  
-    precomputed_selection: pass the dict returned by search_and_select_tiles()
+    precomputed_selection: pass the dict returned by _search_and_select_tiles()
     (or by plot_tile_coverage(), which returns it as its third value) to
     reuse an already-computed tile selection instead of searching again.
     STRONGLY RECOMMENDED whenever you've already called plot_tile_coverage()
@@ -504,7 +690,7 @@ def get_sentinel2_bands(bbox: list, target_date: str, cloud_thresh: int = 20,
     strictly guarantee the actual fetch matches it. Passing the same
     precomputed result to both closes that gap completely:
  
-        result = search_and_select_tiles(bbox, target_date, cloud_thresh, date_window_days, clip_buffer_m)
+        result = _search_and_select_tiles(bbox, target_date, cloud_thresh, date_window_days, clip_buffer_m)
         plot_tile_coverage(bbox, target_date, precomputed_selection=result)
         band_arrays = get_sentinel2_bands(bbox, target_date, precomputed_selection=result)
  
@@ -520,7 +706,7 @@ def get_sentinel2_bands(bbox: list, target_date: str, cloud_thresh: int = 20,
     fraction stats, which adds some overhead -- not something you want
     running by default in production use.
     """
-    result = precomputed_selection or search_and_select_tiles(
+    result = precomputed_selection or _search_and_select_tiles(
         bbox, target_date, cloud_thresh, date_window_days, clip_buffer_m
     )
     selected_items = result["selected_items"]
@@ -577,10 +763,13 @@ def get_sentinel2_bands(bbox: list, target_date: str, cloud_thresh: int = 20,
             output[mask] = vals[mask]
         return reference_grid.copy(data=output)
  
-    def open_and_clip(href: str, tile_label: str, band_name: str):
+    def open_and_clip(item, tile_label: str, band_name: str):
         """Opens one band from one tile, clips it to the AOI (+ buffer),
         and reprojects it to `reference_crs` IMMEDIATELY -- not deferred
-        until the merge step. Reprojecting late (only inside the merge loop, keyed off
+        until the merge step. Northern Virginia (and any AOI near -78
+        longitude) can straddle the UTM zone 17N/18N boundary, so tiles
+        covering the same AOI may legitimately come from different native
+        CRSs. Reprojecting late (only inside the merge loop, keyed off
         whichever tile happened to be first) makes every intermediate
         array's bounds hard to compare/debug and adds a failure point
         right before the merge call. Reprojecting here means every
@@ -597,12 +786,19 @@ def get_sentinel2_bands(bbox: list, target_date: str, cloud_thresh: int = 20,
         here" for a valid measurement.
         """
         print(f"  Opening {band_name} for tile {tile_label}...")
-        da = rioxarray.open_rasterio(href, masked=True).squeeze("band", drop=True)
-        clipped = _clip_to_box(
-            da,
-            aoi_ref_box.bounds[0], aoi_ref_box.bounds[1], aoi_ref_box.bounds[2], aoi_ref_box.bounds[3],
-            src_crs=reference_crs,
-        )
+ 
+        def _load(href):
+            da = rioxarray.open_rasterio(href, masked=True).squeeze("band", drop=True)
+            clipped = _clip_to_box(
+                da,
+                aoi_ref_box.bounds[0], aoi_ref_box.bounds[1], aoi_ref_box.bounds[2], aoi_ref_box.bounds[3],
+                src_crs=reference_crs,
+            )
+            # zeros are no-data, not valid pixels; .load() makes the network
+            # read happen here, inside the retry, with a freshly signed URL
+            return _mask_s2_nodata(clipped).load()
+ 
+        clipped = _with_retries(_load, item, band_name, f"{band_name} {tile_label}")
         if clipped.rio.crs != reference_crs:
             print(f"    Reprojecting tile {tile_label} from {clipped.rio.crs} to {reference_crs}...")
             clipped = clipped.rio.reproject(reference_crs, nodata=np.nan)
@@ -610,11 +806,12 @@ def get_sentinel2_bands(bbox: list, target_date: str, cloud_thresh: int = 20,
  
     band_arrays = {}
     for b in BAND_NAMES:
-        tile_arrays = [
-            open_and_clip(item.assets[b].href, item.properties.get("s2:mgrs_tile", item.id), b)
-            for item in selected_items
-        ]
-        tile_ids = [item.properties.get("s2:mgrs_tile", item.id) for item in selected_items]
+        # tile_label includes the date so a gap-fill scene from the same tile
+        # as a best scene can be told apart in the diagnostics below
+        tile_ids = [f"{item.properties.get('s2:mgrs_tile', item.id)}@{item.properties['datetime'][:10]}"
+                    for item in selected_items]
+        tile_arrays = [open_and_clip(item, label, b)
+                       for item, label in zip(selected_items, tile_ids)]
  
         if verbose_tile_diagnostics:
             print(f"  --- Per-tile diagnostics for {b}, BEFORE merge ---")
@@ -858,12 +1055,29 @@ def compute_focal_buffer(band_array: np.ndarray, pixel_size_m: float,
         # pixels per window. This is the common case after AOI clipping.
         return conv(arr_filled, kernel)
 
-    valid = (~np.isnan(arr)).astype(np.float32)
-    numerator = conv(arr_filled, kernel)
-    denominator = conv(valid, kernel)
-    denominator[denominator == 0] = np.nan
+    # valid = (~np.isnan(arr)).astype(np.float32)
+    # numerator = conv(arr_filled, kernel)
+    # denominator = conv(valid, kernel)
+    # denominator[denominator == 0] = np.nan
 
-    return (numerator / denominator).astype(np.float32)
+    # return (numerator / denominator).astype(np.float32)
+
+    kernel64 = kernel.astype(np.float64)
+    if use_fft:
+        conv64 = lambda a, k: fftconvolve(a, k, mode="same")
+    else:
+        conv64 = lambda a, k: convolve(a, k, mode="nearest")
+
+    valid = (~np.isnan(arr)).astype(np.float64)
+    numerator = conv64(arr_filled.astype(np.float64), kernel64)
+    denominator = conv64(valid, kernel64)
+
+    min_weight = kernel64[kernel64 > 0].min()
+    no_data = denominator < 0.5 * min_weight
+    out = np.full(arr.shape, np.nan, dtype=np.float32)
+    ok = ~no_data
+    out[ok] = (numerator[ok] / denominator[ok]).astype(np.float32)
+    return out
 
 def _build_one_focal_buffer(band_name: str, arr: np.ndarray, dist: float,
                              pixel_size_m: float, out_dir: str, profile: dict,
@@ -951,7 +1165,7 @@ def extract_values_bilinear(raster_path: str, points_gdf: gpd.GeoDataFrame) -> n
     return values
 
 def build_training_table(points_gdf: gpd.GeoDataFrame, focal_raster_paths: list,
-                          temp_col: str = "temperature_f", n_jobs: int = -1) -> pd.DataFrame:
+                          temp_col: str = "temperature_c", n_jobs: int = -1) -> pd.DataFrame:
     """
     Compiles the full training table: 1 row per observation, 1 column per
     focal buffer predictor (150 columns) + 1 temperature column, matching
@@ -976,7 +1190,7 @@ def build_training_table(points_gdf: gpd.GeoDataFrame, focal_raster_paths: list,
 
     predictor_df = pd.DataFrame({col_name: values for col_name, values in results})
     table = pd.concat(
-        [pd.Series(points_gdf[temp_col].values, name="temperature_f"), predictor_df],
+        [pd.Series(points_gdf[temp_col].values, name=temp_col), predictor_df],
         axis=1,
     )
 
@@ -986,7 +1200,7 @@ def build_training_table(points_gdf: gpd.GeoDataFrame, focal_raster_paths: list,
 # ---------------------------------------------------------------------------
 # STEP 5-6: Train/test split and Random Forest training
 # ---------------------------------------------------------------------------
-def train_rf_model(table: pd.DataFrame, target_col: str = "temperature_f",
+def train_rf_model(table: pd.DataFrame, target_col: str = "temperature_c",
                     test_size: float = 0.30, random_state: int = 42):
     """
     Splits data 70/30 (matching the paper) and trains a Random Forest
