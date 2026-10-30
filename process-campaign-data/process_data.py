@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from datetime import date, time
+from typing import Literal
 
 import zipfile
 
@@ -12,16 +13,60 @@ import geopandas as gpd
 from shapely.geometry import Point
 
 """
-Meteotracker Field Data Processing Module. From Luis Ortiz.
+Field Data Processing Module. Adapted from original file from Luis Ortiz.
 
 Converts temperature units, calculates the NOAA/NWS Heat Index using the Rothfusz
 regression equation with boundary adjustments, applies automated quality control
 (freeze and spike removal), and computes spatial anomalies relative to run means.
 """
 
+LOG_COLUMNS = ['Time', 'Lat', 'Lon', 'Temp[°C]', 'Hum[%]']
+
+# Adjust header names to the format of your file to map to the standard names above
+HEADER_TO_STANDARD = {}
+
+
+def read_log_csv(file_path: Path) -> pd.DataFrame:
+    """Read a log CSV and return it with the standard column names.
+
+    A file whose first row is the header is
+    renamed through HEADER_TO_STANDARD. 
+    A headerless file is read with LOG_COLUMNS.
+
+    Args:
+        file_path: Path to the raw log CSV file.
+
+    Returns:
+        pd.DataFrame: Raw data with columns Time, Lat, Lon, Temp[°C], Hum[%].
+    """
+    with open(file_path, encoding='utf-8-sig') as fh:
+        first_cell = fh.readline().split(',')[0].strip()
+
+    with open(file_path, encoding='utf-8-sig') as fh:
+        n_lines = sum(1 for line in fh if line.strip())
+
+    has_header = first_cell.lower() == 'datetime'
+    if has_header:
+        df = pd.read_csv(file_path, encoding='utf-8-sig', on_bad_lines='skip')
+        missing = set(HEADER_TO_STANDARD) - set(df.columns)
+        if missing:
+            raise ValueError(f"{file_path.name}: header is missing columns {sorted(missing)}")
+        df = df.rename(columns=HEADER_TO_STANDARD)[LOG_COLUMNS]
+    else:
+        df = pd.read_csv(file_path, header=None, names=LOG_COLUMNS, on_bad_lines='skip')
+
+    # Rows with the wrong number of fields are skipped by pandas (for example two records
+    # run together after an interrupted write). Report them rather than dropping them silently.
+    n_expected = n_lines - 1 if has_header else n_lines
+    if len(df) < n_expected:
+        print(f"  {file_path.name}: skipped {n_expected - len(df)} malformed row(s) with the wrong number of fields")
+    return df
+
+
+AllowedScale = Literal['C', 'F']
 
 def calculate_heat_index(
-    t: Union[pd.Series, np.ndarray], rh: Union[pd.Series, np.ndarray]
+    t: Union[pd.Series, np.ndarray], rh: Union[pd.Series, np.ndarray], scale: AllowedScale
 ) -> np.ndarray:
     """Calculate the Heat Index (HI) in Fahrenheit based on the NOAA/NWS equation.
 
@@ -33,13 +78,16 @@ def calculate_heat_index(
         https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
 
     Args:
-        t: Ambient air temperature in Fahrenheit (°F).
+        t: Ambient air temperature in Fahrenheit (°F) or Celsius (ºC).
         rh: Relative humidity in percentage (%).
 
     Returns:
-        np.ndarray: Computed Heat Index values in Fahrenheit (°F).
+        np.ndarray: Computed Heat Index values in Fahrenheit (°F) or Celsius (ºC).
     """
-    t_arr = np.array(t, dtype=float)
+    if scale == 'C':
+        t_arr = np.array(t, dtype=float) * 1.8 + 32.0
+    else:
+        t_arr = np.array(t, dtype=float)
     rh_arr = np.array(rh, dtype=float)
 
     # 1. Simple Heat Index formula check
@@ -87,7 +135,10 @@ def calculate_heat_index(
 
         hi[full_mask] = hi_rothfusz
 
-    return hi
+    if scale == 'C':
+        return (hi - 32.0) / 1.8
+    else: 
+        return hi
 
 
 def remove_freezes(series: pd.Series, min_run: int = 10) -> pd.Series:
