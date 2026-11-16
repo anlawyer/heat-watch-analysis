@@ -28,3 +28,6 @@ Data compiled from campaigns run by [NOAA](https://heat.gov/urban-heat-islands-m
 
 3. Run a script to validate the format of the data itself, like [this one](./noaa-heat-watch-data/format-validation-scripts.md).
    - Normalize the outliers to the data [format](./noaa-heat-watch-data/data-format.md) using scripts like [these](./noaa-heat-watch-data/data-normalizing-scripts.md).
+
+
+[![DOI](https://zenodo.org/badge/1144372670.svg)](https://doi.org/10.5281/zenodo.24288066)
